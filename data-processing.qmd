@@ -115,7 +115,7 @@ The preparation script followed a small set of consistent rules before saving th
 2. Add a `year` column and standardize renamed variables so all years share one schema.
 3. Remove U.S. territories by keeping only the 50 states plus the District of Columbia.
 4. Map `_STATE` FIPS codes to full state names and two-letter abbreviations.
-5. Convert BRFSS special missing codes to `NA`, while converting `MENTHLTH == 88` to 0 poor-mental-health days.
+5. Recode BRFSS non-substantive responses to missing. For most categorical variables, codes such as 7 ("Don't know/Not sure"), 9 ("Refused"), and blank "Not asked or Missing" were treated as `NA`. For `MENTHLTH`, 77 and 99 were treated as `NA`, while 88 ("None") was recoded to 0 poor-mental-health days rather than missing.
 6. Define frequent mental distress as `_MENT14D == 3`, matching the CDC's 14-day threshold.
 7. Recode selected variables into labelled factors for plotting and tabulation.
 8. Save the cleaned analytic dataset as `brfss_subset.rds`.
