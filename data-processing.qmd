@@ -38,6 +38,16 @@ This page documents the full data pipeline behind the main report. The analysis 
 
 The preparation code used to build the analytic dataset is available in the project repository at [`prep_brfss_subset.R`](https://github.com/Alfie0925/biostat620-final-project/blob/main/prep_brfss_subset.R). The rendered website reads the resulting analytic file from `brfss_subset.rds`.
 
+# Data Background
+
+This project uses multiple years of data from the Behavioral Risk Factor Surveillance System (BRFSS), a large national health survey conducted by the Centers for Disease Control and Prevention (CDC) in collaboration with U.S. states and participating territories. Established in 1984, BRFSS collects standardized, state-specific information on health-related risk behaviors, chronic conditions, health care access, and preventive service use among noninstitutionalized adults aged 18 years or older in the United States.
+
+BRFSS data are based on self-reported telephone interviews and, since 2011, have been collected using both landline and cellular telephones. This dual-frame design improves population coverage and representativeness as telephone use patterns have shifted over time. Survey data are collected by state health departments following CDC protocols, then sent to the CDC for editing, weighting, and public release.
+
+To improve representativeness, BRFSS uses iterative proportional fitting ("raking") to generate survey weights. This method adjusts the sample to better reflect the demographic makeup of each state using characteristics such as age, sex/gender, race and ethnicity, education, marital status, home ownership, geographic region, and telephone source.
+
+Across years, BRFSS follows a common structure that includes a core questionnaire, optional modules, and state-added questions. The core questionnaire is administered across participating states, while optional modules may vary by year and location. By combining multiple annual BRFSS datasets, this study uses a large, well-established public health surveillance source while accounting for modest year-to-year differences in survey content and participation.
+
 # Raw data acquisition
 
 The raw input files are the annual BRFSS public-use SAS transport files released by the CDC. I worked from the 2020 through 2024 annual survey cycles and imported the `.XPT` files with `haven::read_xpt()`.
