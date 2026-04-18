@@ -5,6 +5,8 @@
 .quarto/
 *_cache/
 *_files/
+!docs/*_files/
+!docs/*_files/**
 *.XPT
 Final_Project.html
 
