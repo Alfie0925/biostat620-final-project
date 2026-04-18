@@ -120,12 +120,6 @@ The preparation script followed a small set of consistent rules before saving th
 7. Recode selected variables into labelled factors for plotting and tabulation.
 8. Save the cleaned analytic dataset as `brfss_subset.rds`.
 
-Important recoding notes:
-
-- Tennessee is absent from the 2024 public data because it did not meet minimum reporting requirements that year.
-- `EMPLOY1 == 7` ("Retired") is a valid category and was kept as such.
-- The sleep variable `SLEPTIM1` was originally considered for analysis, but it is not available in the 2024 core file, so sleep analyses were dropped from the final report.
-
 # Sample-size flow
 
 ```{r sample-flow}
