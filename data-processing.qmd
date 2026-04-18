@@ -202,37 +202,3 @@ plot_ly(
 ```
 
 This distribution is one reason the dichotomized FMD outcome is useful here: respondents cluster heavily at 0 days and again at the extreme upper tail, rather than forming a smooth continuous distribution.
-
-## Optional-module availability across years
-
-```{r eda-module-coverage}
-module_coverage <- tibble(
-  year = sort(unique(brfss$year)),
-  Loneliness = sapply(sort(unique(brfss$year)), function(y) sum(!is.na(brfss$loneliness[brfss$year == y]))),
-  `Emotional support` = sapply(sort(unique(brfss$year)), function(y) sum(!is.na(brfss$support[brfss$year == y]))),
-  `Life satisfaction` = sapply(sort(unique(brfss$year)), function(y) sum(!is.na(brfss$life_satisfy[brfss$year == y])))
-) |>
-  pivot_longer(-year, names_to = "Measure", values_to = "n")
-
-plot_ly(module_coverage,
-        x = ~year, y = ~Measure, z = ~n, type = "heatmap",
-        colorscale = list(c(0, "#ecf0f1"), c(1, "#c0392b")),
-        hovertemplate = "%{y}, %{x}<br>Non-missing rows: %{z:,}<extra></extra>") |>
-  layout(
-    title = list(text = "Exploratory check: optional-module coverage by year", x = 0),
-    xaxis = list(title = "BRFSS cycle", dtick = 1, side = "top"),
-    yaxis = list(title = ""),
-    margin = list(t = 60)
-  )
-```
-
-This coverage check explains why loneliness, emotional support, and life satisfaction were analyzed with pairwise complete cases and explicitly labeled as optional-module variables in the report.
-
-# Analytic dataset used by the website
-
-The website itself does not ship the raw 5 GB of source `.XPT` files. Instead, it includes a smaller analytic dataset that is sufficient to reproduce the site content:
-
-- `brfss_subset.rds`: cleaned analytic file used during rendering
-- `prep_brfss_subset.R`: reproducible preparation script
-
-This keeps the GitHub Pages repository lightweight enough to deploy while still documenting the full data pipeline and linking back to the original CDC sources.
