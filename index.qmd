@@ -1,0 +1,677 @@
+---
+title: "State-level variation and multi-year trends in frequent mental distress among U.S. adults"
+subtitle: "Patterns by exercise, loneliness, lifestyle, and socioeconomic factors — BRFSS 2020–2024"
+author: "Boqian Mao"
+date: today
+editor: visual
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.align = "center", fig.width = 8, fig.height = 5
+)
+```
+
+```{r libraries}
+library(tidyverse)
+library(knitr)
+library(DT)
+library(plotly)
+library(scales)
+library(htmltools)
+```
+
+```{r load-data}
+brfss <- readRDS("brfss_subset.rds")
+
+base_all <- brfss |> filter(!is.na(fmd))
+base     <- base_all |> filter(year == 2024)
+
+n_total_all <- nrow(brfss)
+n_base_all  <- nrow(base_all)
+n_base      <- nrow(base)
+n_states    <- dplyr::n_distinct(base$state)
+years_range <- range(base_all$year)
+
+fmd_pal   <- c("FMD" = "#c0392b", "Not FMD" = "#7f8c8d")
+fmd_color <- "#c0392b"
+```
+
+::: {.callout-important}
+## Project Summary
+This website presents a descriptive analysis of **frequent mental distress (FMD)** among U.S. adults using five years of **CDC BRFSS** survey data from **2020 through 2024**.
+
+- Goal: describe how FMD varies over time, across states, and across behavioral and socioeconomic subgroups
+- Data: pooled BRFSS annual survey files, trimmed to a focused analytic dataset
+- Analytic sample: `r comma(n_base_all)` respondents with valid FMD across all years
+- Interactive content: Plotly charts and maps embedded directly in the report
+
+For the full raw-data description, cleaning steps, harmonization decisions, and exploratory checks, see the [Data Processing](data-processing.qmd) page.
+:::
+
+# Introduction
+
+Mental health has become one of the central concerns in U.S. public health surveillance. While physical health outcomes have historically dominated population health reporting, the last decade — and especially the period surrounding the COVID-19 pandemic — has seen a rapid expansion of interest in how Americans feel, function, and cope day-to-day. *Frequent mental distress* (FMD), defined as reporting 14 or more days of poor mental health in the past 30 days, is one of the most widely used surveillance indicators for adult mental health at the state level. It captures a meaningful threshold of psychological burden without requiring a clinical diagnosis, and it has been used by the Centers for Disease Control and Prevention (CDC) to track inequities in mental well-being across states, age groups, and socioeconomic strata.
+
+The Behavioral Risk Factor Surveillance System (BRFSS) is an annual, state-based telephone survey conducted by the CDC that collects uniform information on health-related behaviors, chronic conditions, and preventive services. With more than 400,000 adult respondents each year, BRFSS is one of the few data sources that supports both nationally representative descriptive analysis *and* state-level comparison. Its mental-health items, combined with its batteries of questions on exercise, loneliness, emotional support, employment, marriage, smoking, drinking, and socioeconomic status, make it well suited for the research questions in this report.
+
+This report has a descriptive focus, drawing on five consecutive BRFSS cycles (2020 through 2024) to answer four questions: (1) How has overall FMD prevalence shifted across the pandemic and post-pandemic years? (2) How does FMD vary across U.S. states, and has the geographic pattern been stable over time? (3) How is FMD patterned by behavioral, psychosocial, and lifestyle factors — exercise, loneliness, emotional support, smoking, drinking, and general health? (4) Which demographic and socioeconomic groups — by age, sex, income, education, employment, and marital status — report the highest FMD prevalence? No modeling or causal inference is attempted; the goal is to present a clear, layered picture of where mental distress is concentrated and which correlates stand out most in BRFSS 2020–2024.
+
+# Data and Methods
+
+The analysis is based on the 2020–2024 [Behavioral Risk Factor Surveillance System (BRFSS)](https://www.cdc.gov/brfss/annual_data/annual_data.htm) annual survey files released by the CDC. I imported the raw `LLCP2020.XPT` through `LLCP2024.XPT` files, harmonized renamed variables across years, removed territories, recoded BRFSS missing values, and defined frequent mental distress as `_MENT14D == 3`.
+
+The cleaned analytic dataset used by this website contains `r comma(n_total_all)` rows, with `r comma(n_base_all)` respondents contributing to the pooled valid-FMD analyses and `r comma(n_base)` respondents contributing to the 2024 state snapshot. The preparation code lives in [`prep_brfss_subset.R`](https://github.com/Alfie0925/biostat620-final-project/blob/main/prep_brfss_subset.R), and the site renders from `brfss_subset.rds`.
+
+This homepage keeps the methods overview intentionally short. For the full raw-data description, harmonization choices, sample-size flow, and exploratory checks, visit the dedicated [Data Processing](data-processing.qmd) page.
+
+```{r methods-summary}
+methods_tbl <- tribble(
+  ~Component, ~Summary,
+  "Raw source", "CDC BRFSS annual survey files for 2020-2024",
+  "Primary outcome", "Frequent mental distress (FMD): _MENT14D == 3",
+  "Coverage", "50 states + DC after removing territories; Tennessee absent in 2024",
+  "Key harmonization", "Income, doctor-cost, and alcohol variables aligned across years",
+  "Analysis style", "Descriptive, unweighted, pairwise complete-case figures"
+)
+
+kable(methods_tbl, caption = "Compact methods summary for the website homepage.")
+```
+
+# Results
+
+## Overall patterns and multi-year trends
+
+```{r fig1-overall}
+f1_data <- base |>
+  summarise(
+    FMD     = mean(fmd),
+    `Not FMD` = 1 - FMD,
+    n       = n()
+  ) |>
+  pivot_longer(c(FMD, `Not FMD`), names_to = "Status", values_to = "Proportion") |>
+  mutate(Status = factor(Status, levels = c("Not FMD", "FMD")),
+         pct = Proportion * 100)
+
+fmd_overall_pct <- f1_data$pct[f1_data$Status == "FMD"]
+
+plot_ly(f1_data, x = ~Status, y = ~Proportion, type = "bar",
+        marker = list(color = c("#7f8c8d", fmd_color)),
+        text = ~sprintf("%.1f%%", pct), textposition = "outside",
+        hovertemplate = paste("%{x}: %{y:.1%}<br>N = ", comma(f1_data$n[1]),
+                              "<extra></extra>")) |>
+  layout(
+    title = list(text = paste0("Figure 1: Overall prevalence of Frequent Mental Distress (FMD)",
+                               "<br><sub>U.S. adults, BRFSS 2024 (n = ",
+                               comma(f1_data$n[1]), ")</sub>"), x = 0),
+    yaxis = list(title = "Proportion", tickformat = ".0%",
+                 range = c(0, max(f1_data$Proportion) * 1.15)),
+    xaxis = list(title = ""),
+    showlegend = FALSE, margin = list(t = 80)
+  )
+```
+
+In the most recent BRFSS cycle, **`r sprintf("%.1f%%", fmd_overall_pct)`** of the `r comma(n_base)` adults in the base cohort reported frequent mental distress — that is, 14 or more days of poor mental health in the past 30. This figure sits in the range reported by the CDC for recent BRFSS cycles (historically ~13–15%) and provides the reference point against which the state-level and subgroup comparisons below should be read.
+
+```{r fig2-fmd-by-year}
+f2_year <- base_all |>
+  group_by(year) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+plot_ly(f2_year, x = ~year, y = ~fmd_pct, type = "scatter", mode = "lines+markers+text",
+        line = list(color = "#c0392b", width = 3),
+        marker = list(color = "#c0392b", size = 10),
+        text = ~sprintf("%.1f%%", fmd_pct),
+        textposition = "top center",
+        hovertemplate = "Year %{x}<br>FMD: %{y:.2f}%<br>n = %{customdata:,}<extra></extra>",
+        customdata = ~n) |>
+  layout(
+    title = list(text = paste0("Figure 2: Overall FMD prevalence by BRFSS cycle, 2020–2024",
+                               "<br><sub>Pooled U.S. adults, n = ",
+                               comma(n_base_all), "</sub>"), x = 0),
+    xaxis = list(title = "BRFSS cycle", dtick = 1),
+    yaxis = list(title = "FMD prevalence (%)", ticksuffix = "%",
+                 range = c(floor(min(f2_year$fmd_pct) - 1),
+                           ceiling(max(f2_year$fmd_pct) + 1))),
+    margin = list(t = 80)
+  )
+```
+
+```{r yr-stats}
+yr_lo <- f2_year$fmd_pct[f2_year$year == 2020]
+yr_hi <- max(f2_year$fmd_pct)
+yr_hi_year <- f2_year$year[which.max(f2_year$fmd_pct)]
+yr_24 <- f2_year$fmd_pct[f2_year$year == 2024]
+```
+
+FMD prevalence has drifted upward across the five cycles. The 2020 cycle — fielded mostly during the first pandemic year — reported **`r sprintf("%.1f%%", yr_lo)`**; the peak across the five years was **`r sprintf("%.1f%%", yr_hi)`** in **`r yr_hi_year`**, and the 2024 rate is **`r sprintf("%.1f%%", yr_24)`**. The movement is modest in absolute terms (a few percentage points) but consistent in direction: in a population of ~260 million U.S. adults, a one-percentage-point shift corresponds to roughly 2.6 million additional people reporting frequent mental distress, so even a small shift is substantively meaningful.
+
+```{r fig3-menthlth}
+f3_data <- base |>
+  filter(!is.na(mental_days)) |>
+  count(mental_days) |>
+  mutate(
+    highlight = case_when(
+      mental_days == 0  ~ "0 days",
+      mental_days == 30 ~ "30 days",
+      mental_days >= 14 ~ "14+ days (FMD)",
+      TRUE              ~ "1-13 days"
+    ),
+    highlight = factor(highlight,
+                       levels = c("0 days", "1-13 days",
+                                  "14+ days (FMD)", "30 days"))
+  )
+
+pal_hist <- c("0 days" = "#27ae60", "1-13 days" = "#bdc3c7",
+              "14+ days (FMD)" = "#e67e22", "30 days" = "#c0392b")
+
+plot_ly(f3_data, x = ~mental_days, y = ~n, color = ~highlight,
+        colors = pal_hist, type = "bar",
+        hovertemplate = "%{x} days: %{y:,} respondents<extra></extra>") |>
+  layout(
+    title = list(text = "Figure 3: Distribution of days of poor mental health (past 30), BRFSS 2024",
+                 x = 0),
+    xaxis = list(title = "Number of poor-mental-health days",
+                 dtick = 5),
+    yaxis = list(title = "Respondents"),
+    legend = list(title = list(text = "Category"), orientation = "h",
+                  x = 0.5, xanchor = "center", y = -0.2),
+    barmode = "stack", margin = list(t = 60, b = 80)
+  )
+```
+
+The distribution of `MENTHLTH` is strongly bimodal: a large mass of respondents reported **0 days** of poor mental health, and a second, much smaller but non-trivial mass reported the maximum of **30 days**. Almost nobody clusters in the middle ranges (10–20 days). This bimodality is part of what motivates dichotomizing at the 14-day threshold — the conceptual groups "essentially fine" and "persistently distressed" are easier to separate than any continuous summary of this distribution.
+
+## State-level variation
+
+State-level prevalence of FMD in 2024 ranges widely, and the state × year heatmap in Figure 4c shows that the ordering is largely stable across cycles. The figures below show the same quantity in three complementary ways: a ranked bar chart for 2024, a choropleth map of 2024, and a state × year heatmap for 2020–2024.
+
+```{r fig4a-state-bar, fig.height=9}
+state_tbl <- base |>
+  group_by(state, abb) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop") |>
+  arrange(fmd_pct)
+
+plot_ly(state_tbl,
+        x = ~fmd_pct, y = ~reorder(state, fmd_pct), type = "bar",
+        orientation = "h",
+        marker = list(color = ~fmd_pct,
+                      colorscale = list(c(0, "#3498db"),
+                                        c(1, "#c0392b")),
+                      showscale = FALSE),
+        hovertemplate = paste("<b>%{y}</b><br>FMD: %{x:.1f}%<br>",
+                              "n = %{customdata:,}<extra></extra>"),
+        customdata = ~n) |>
+  layout(
+    title = list(text = paste0("Figure 4a: Frequent Mental Distress prevalence by state, BRFSS 2024",
+                               "<br><sub>50 jurisdictions, n = ",
+                               comma(n_base), "</sub>"), x = 0),
+    xaxis = list(title = "FMD prevalence (%)", ticksuffix = "%"),
+    yaxis = list(title = "", automargin = TRUE),
+    margin = list(l = 120, t = 70)
+  )
+```
+
+```{r fig4b-state-map}
+plot_ly(state_tbl, type = "choropleth",
+        locations = ~abb, locationmode = "USA-states",
+        z = ~fmd_pct,
+        colorscale = list(c(0, "#3498db"),
+                          c(0.5, "#f39c12"),
+                          c(1, "#c0392b")),
+        colorbar = list(title = "FMD %", ticksuffix = "%"),
+        hovertemplate = paste("<b>%{text}</b><br>FMD: %{z:.1f}%<extra></extra>"),
+        text = ~state) |>
+  layout(
+    title = list(text = "Figure 4b: State-level FMD prevalence (choropleth), BRFSS 2024",
+                 x = 0),
+    geo = list(scope = "usa", projection = list(type = "albers usa"),
+               showlakes = TRUE, lakecolor = "white"),
+    margin = list(t = 60)
+  )
+```
+
+```{r fig4c-state-heatmap, fig.height=11}
+state_year <- base_all |>
+  group_by(year, state) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+state_order <- state_year |>
+  group_by(state) |>
+  summarise(mean_pct = mean(fmd_pct, na.rm = TRUE), .groups = "drop") |>
+  arrange(mean_pct) |>
+  pull(state)
+
+state_year <- state_year |> mutate(state = factor(state, levels = state_order))
+
+plot_ly(state_year,
+        x = ~year, y = ~state, z = ~fmd_pct, type = "heatmap",
+        colorscale = list(c(0, "#3498db"),
+                          c(0.5, "#f39c12"),
+                          c(1, "#c0392b")),
+        colorbar = list(title = "FMD %", ticksuffix = "%"),
+        hovertemplate = paste("<b>%{y}</b>, %{x}<br>FMD: %{z:.1f}%<br>",
+                              "n = %{customdata:,}<extra></extra>"),
+        customdata = ~n) |>
+  layout(
+    title = list(text = paste0("Figure 4c: State-level FMD prevalence by year, BRFSS 2020–2024",
+                               "<br><sub>Rows sorted by 5-year mean FMD (lowest at bottom)</sub>"),
+                 x = 0),
+    xaxis = list(title = "BRFSS cycle", dtick = 1, side = "top"),
+    yaxis = list(title = "", automargin = TRUE),
+    margin = list(l = 120, t = 90)
+  )
+```
+
+```{r tab1-state}
+state_tbl |>
+  arrange(desc(fmd_pct)) |>
+  mutate(
+    Rank = row_number(),
+    n = comma(n),
+    `FMD (%)` = sprintf("%.1f", fmd_pct)
+  ) |>
+  select(Rank, State = state, n, `FMD (%)`) |>
+  datatable(
+    rownames = FALSE,
+    caption = "Table 1: FMD prevalence by state, sorted highest to lowest (BRFSS 2024).",
+    options = list(pageLength = 10, order = list(list(0, "asc")))
+  )
+```
+
+```{r state-extremes}
+hi <- state_tbl |> arrange(desc(fmd_pct)) |> head(3)
+lo <- state_tbl |> arrange(fmd_pct)       |> head(3)
+range_pp <- diff(range(state_tbl$fmd_pct))
+```
+
+State-level FMD prevalence in 2024 ranged from **`r sprintf("%.1f%%", min(state_tbl$fmd_pct))`** (`r lo$state[1]`) to **`r sprintf("%.1f%%", max(state_tbl$fmd_pct))`** (`r hi$state[1]`) — a spread of about **`r sprintf("%.1f percentage points", range_pp)`**. The highest-prevalence states in 2024 are **`r knitr::combine_words(hi$state)`**; the lowest are **`r knitr::combine_words(lo$state)`**. The choropleth makes the rough geography visible: elevated FMD prevalence is concentrated in pockets of Appalachia and the interior West, while several Great Plains and Upper Midwest states report markedly lower prevalence. The state × year heatmap (Figure 4c) shows that this ordering is quite stable across 2020–2024 — a state near the top in 2020 is usually still near the top in 2024 — but it also makes visible the overall upward drift within most states across the five cycles. Note that these are crude, unweighted state prevalences — they do not adjust for age, sex, or BRFSS sampling design.
+
+## Demographic trends across years
+
+```{r fig5-age-sex-trend, fig.height=6}
+f5_sex <- base_all |>
+  filter(!is.na(sex)) |>
+  group_by(year, sex) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+f5_age <- base_all |>
+  filter(!is.na(age_group)) |>
+  mutate(age_bucket = case_when(
+    age_group %in% c("18-24","25-29") ~ "18-29",
+    age_group %in% c("30-34","35-39","40-44") ~ "30-44",
+    age_group %in% c("45-49","50-54","55-59") ~ "45-59",
+    age_group %in% c("60-64","65-69") ~ "60-69",
+    TRUE ~ "70+"
+  ),
+  age_bucket = factor(age_bucket,
+                      levels = c("18-29","30-44","45-59","60-69","70+"))) |>
+  group_by(year, age_bucket) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+p_sex <- plot_ly(f5_sex, x = ~year, y = ~fmd_pct, color = ~sex,
+                 colors = c("Female" = "#c0392b", "Male" = "#2980b9"),
+                 type = "scatter", mode = "lines+markers",
+                 hovertemplate = "%{fullData.name}, %{x}<br>FMD: %{y:.1f}%<extra></extra>") |>
+  layout(xaxis = list(title = "BRFSS cycle", dtick = 1),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+age_colors <- c("18-29" = "#c0392b", "30-44" = "#e67e22",
+                "45-59" = "#f1c40f", "60-69" = "#27ae60",
+                "70+"   = "#2980b9")
+
+p_age <- plot_ly(f5_age, x = ~year, y = ~fmd_pct, color = ~age_bucket,
+                 colors = age_colors,
+                 type = "scatter", mode = "lines+markers",
+                 hovertemplate = "%{fullData.name}, %{x}<br>FMD: %{y:.1f}%<extra></extra>") |>
+  layout(xaxis = list(title = "BRFSS cycle", dtick = 1),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+subplot(p_sex, p_age, nrows = 1, titleX = TRUE, titleY = TRUE,
+        margin = 0.07) |>
+  layout(
+    title = list(text = paste0("Figure 5: FMD trends 2020–2024 by sex and by age band",
+                               "<br><sub>Pooled U.S. adults, n = ",
+                               comma(n_base_all), "</sub>"),
+                 x = 0),
+    legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.15),
+    margin = list(t = 80, b = 70)
+  )
+```
+
+The year-over-year trends expose *who* is driving the aggregate drift. The sex panel shows that both men and women trended up from 2020 through the mid-2020s, with women consistently reporting higher FMD prevalence than men in every cycle — the gap is persistent rather than closing. The age panel is more striking: the upward movement is concentrated in the youngest bands, especially 18–29, where FMD prevalence has risen sharply across the five cycles. Older adults — particularly 70+ — remain near the bottom of the distribution in every year. The generational divergence is one of the clearest patterns in the data.
+
+## Behavioral and psychosocial correlates
+
+::: {.callout-note}
+## Module note
+The next figure uses the optional **Social Determinants / Health Equity** module, which only a subset of jurisdictions fielded in each cycle: `SDLONELY` appears in 2023 and 2024 only, while `EMTSUPRT` and `LSATISFY` appear in 2022–2024. Figure 6 pools the available cycles, with `r comma(sum(!is.na(base_all$loneliness)))` respondents for loneliness and `r comma(sum(!is.na(base_all$support)))` for emotional support.
+:::
+
+```{r fig6-loneliness-support}
+mk_group_df <- function(df, var, label) {
+  df |>
+    filter(!is.na(.data[[var]])) |>
+    group_by(level = .data[[var]]) |>
+    summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop") |>
+    mutate(variable = label)
+}
+
+f6_data <- bind_rows(
+  mk_group_df(base_all, "loneliness", "Loneliness"),
+  mk_group_df(base_all, "support",    "Emotional support")
+) |>
+  mutate(level = factor(level,
+                        levels = c("Always", "Usually", "Sometimes",
+                                   "Rarely", "Never")))
+
+p_lone <- plot_ly(
+  f6_data |> filter(variable == "Loneliness"),
+  x = ~level, y = ~fmd_pct, type = "bar",
+  marker = list(color = "#c0392b"),
+  text = ~sprintf("%.1f%%", fmd_pct), textposition = "outside",
+  hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+  customdata = ~n, name = "Loneliness"
+) |>
+  layout(xaxis = list(title = "How often feel lonely"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+p_supp <- plot_ly(
+  f6_data |> filter(variable == "Emotional support"),
+  x = ~level, y = ~fmd_pct, type = "bar",
+  marker = list(color = "#2980b9"),
+  text = ~sprintf("%.1f%%", fmd_pct), textposition = "outside",
+  hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+  customdata = ~n, name = "Support"
+) |>
+  layout(xaxis = list(title = "How often get needed emotional support"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+subplot(p_lone, p_supp, nrows = 1, titleX = TRUE, titleY = TRUE,
+        margin = 0.08) |>
+  layout(
+    title = list(
+      text = paste0("Figure 6: FMD prevalence by loneliness and emotional support",
+                    "<br><sub>BRFSS optional module (pooled 2022–2024 where available), n = ",
+                    comma(sum(!is.na(base_all$loneliness))), "</sub>"),
+      x = 0),
+    showlegend = FALSE, margin = list(t = 80)
+  )
+```
+
+The loneliness gradient is striking. Among adults who say they "always" feel lonely, FMD prevalence is several times higher than among adults who "never" do. The monotone pattern across all five levels — Always → Usually → Sometimes → Rarely → Never — is exactly what one would expect if persistent loneliness and persistent mental distress frequently occur together. The emotional-support panel mirrors this: respondents who rarely or never receive needed support report much higher FMD than those who usually or always do. Neither figure establishes causality; loneliness and distress plausibly reinforce each other, and both can share upstream drivers such as social isolation, financial hardship, or chronic illness.
+
+```{r fig7-exercise-genhlth}
+f7_ex <- base_all |>
+  filter(!is.na(exercise)) |>
+  group_by(level = exercise) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+f7_gh <- base_all |>
+  filter(!is.na(gen_health)) |>
+  group_by(level = gen_health) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+p_ex <- plot_ly(f7_ex, x = ~level, y = ~fmd_pct, type = "bar",
+                marker = list(color = c("#27ae60", "#c0392b")),
+                text = ~sprintf("%.1f%%", fmd_pct),
+                textposition = "outside",
+                hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+                customdata = ~n) |>
+  layout(xaxis = list(title = "Any physical activity (past 30 days)"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+p_gh <- plot_ly(f7_gh, x = ~level, y = ~fmd_pct, type = "bar",
+                marker = list(color = c("#16a085","#27ae60","#f1c40f",
+                                        "#e67e22","#c0392b")),
+                text = ~sprintf("%.1f%%", fmd_pct),
+                textposition = "outside",
+                hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+                customdata = ~n) |>
+  layout(xaxis = list(title = "Self-rated general health"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+subplot(p_ex, p_gh, nrows = 1, titleX = TRUE, titleY = TRUE,
+        margin = 0.08, widths = c(0.35, 0.65)) |>
+  layout(
+    title = list(text = paste0("Figure 7: FMD prevalence by exercise and general health",
+                               "<br><sub>Pooled BRFSS 2020–2024, n = ",
+                               comma(n_base_all), "</sub>"),
+                 x = 0),
+    showlegend = FALSE, margin = list(t = 80)
+  )
+```
+
+Figure 7 extends the behavioral picture. Adults who report any physical activity in the past 30 days have meaningfully lower FMD prevalence than those who report none. The general-health gradient is even steeper: FMD prevalence rises monotonically from respondents who rate their general health "excellent" to those who rate it "poor," and the gap between the endpoints is substantial. Self-rated general health is of course not independent of mental health — the two move together — but the tight alignment reinforces that FMD is not an isolated symptom but part of a broader pattern of reported ill-being.
+
+## Socioeconomic and demographic differences
+
+```{r fig8-subgroups}
+pct_by <- function(df, var) {
+  df |>
+    filter(!is.na(.data[[var]])) |>
+    group_by(level = .data[[var]]) |>
+    summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+}
+
+f8_age    <- pct_by(base_all, "age_group")
+f8_income <- pct_by(base_all, "income")
+f8_edu    <- pct_by(base_all, "education")
+
+p_age <- plot_ly(f8_age, x = ~level, y = ~fmd_pct, type = "bar",
+                 marker = list(color = "#8e44ad"),
+                 text = ~sprintf("%.1f%%", fmd_pct),
+                 textposition = "outside",
+                 hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+                 customdata = ~n, name = "Age") |>
+  layout(xaxis = list(title = "Age band"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+p_inc <- plot_ly(f8_income, x = ~level, y = ~fmd_pct, type = "bar",
+                 marker = list(color = "#2980b9"),
+                 text = ~sprintf("%.1f%%", fmd_pct),
+                 textposition = "outside",
+                 hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+                 customdata = ~n, name = "Income") |>
+  layout(xaxis = list(title = "Income (5-level harmonized)"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+p_edu <- plot_ly(f8_edu, x = ~level, y = ~fmd_pct, type = "bar",
+                 marker = list(color = "#16a085"),
+                 text = ~sprintf("%.1f%%", fmd_pct),
+                 textposition = "outside",
+                 hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+                 customdata = ~n, name = "Education") |>
+  layout(xaxis = list(title = "Education", tickangle = -25),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+subplot(p_age, p_inc, p_edu, nrows = 3, titleX = TRUE, titleY = TRUE,
+        margin = 0.06) |>
+  layout(
+    title = list(text = paste0("Figure 8: FMD prevalence by age, income, and education",
+                               "<br><sub>Pooled BRFSS 2020–2024, n = ",
+                               comma(n_base_all), "</sub>"),
+                 x = 0),
+    showlegend = FALSE, height = 820, margin = list(t = 80, b = 40)
+  )
+```
+
+```{r demo-extras}
+sex_gap <- base_all |> filter(!is.na(sex)) |>
+  group_by(sex) |> summarise(pct = mean(fmd) * 100, .groups = "drop")
+mc_gap <- base_all |> filter(!is.na(med_cost)) |>
+  group_by(med_cost) |> summarise(pct = mean(fmd) * 100, .groups = "drop")
+```
+
+The socioeconomic and demographic pattern is consistent with decades of public-health reporting. FMD prevalence is highest among the youngest adults (18–24 and 25–29) and declines sharply with age, approaching its lowest levels in the 70+ bands. The income gradient runs opposite from income: respondents in the lowest income category report FMD at roughly double the rate of those in the highest. Education shows a parallel gradient. Both women and men who could not afford to see a doctor in the past year (`MEDCOST1 == Yes`) report FMD at substantially elevated rates (`r sprintf("%.1f%%", mc_gap$pct[mc_gap$med_cost == "Yes"])` vs. `r sprintf("%.1f%%", mc_gap$pct[mc_gap$med_cost == "No"])`), highlighting the entanglement of mental distress with access to care. Women report higher FMD than men (`r sprintf("%.1f%%", sex_gap$pct[sex_gap$sex == "Female"])` vs. `r sprintf("%.1f%%", sex_gap$pct[sex_gap$sex == "Male"])`) — a gap consistent with earlier BRFSS cycles.
+
+```{r fig9-employment}
+f9_emp <- base_all |>
+  filter(!is.na(employment)) |>
+  group_by(level = employment) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop") |>
+  arrange(desc(fmd_pct)) |>
+  mutate(level = factor(level, levels = level))
+
+emp_pal <- c("Employed for wages" = "#27ae60",
+             "Self-employed"      = "#16a085",
+             "Retired"            = "#2980b9",
+             "Student"            = "#8e44ad",
+             "Homemaker"          = "#f39c12",
+             "Out of work <1 yr"  = "#e67e22",
+             "Out of work 1+ yr"  = "#d35400",
+             "Unable to work"     = "#c0392b")
+
+plot_ly(f9_emp,
+        x = ~fmd_pct, y = ~level, type = "bar", orientation = "h",
+        marker = list(color = emp_pal[as.character(f9_emp$level)]),
+        text = ~sprintf("%.1f%%", fmd_pct), textposition = "outside",
+        hovertemplate = "%{y}<br>FMD: %{x:.1f}%<br>n = %{customdata:,}<extra></extra>",
+        customdata = ~n) |>
+  layout(
+    title = list(text = paste0("Figure 9: FMD prevalence by employment status",
+                               "<br><sub>Pooled BRFSS 2020–2024, n = ",
+                               comma(sum(!is.na(base_all$employment))), "</sub>"),
+                 x = 0),
+    xaxis = list(title = "FMD prevalence (%)", ticksuffix = "%",
+                 range = c(0, max(f9_emp$fmd_pct) * 1.15)),
+    yaxis = list(title = "", categoryorder = "array",
+                 categoryarray = rev(levels(f9_emp$level)),
+                 automargin = TRUE),
+    showlegend = FALSE, margin = list(l = 140, t = 80)
+  )
+```
+
+```{r emp-extras}
+emp_hi <- f9_emp |> slice(1)
+emp_lo <- f9_emp |> arrange(fmd_pct) |> slice(1)
+```
+
+Employment status is one of the sharpest correlates of FMD in the data. Adults who report being **unable to work** have the highest prevalence of frequent mental distress by a wide margin (`r sprintf("%.1f%%", f9_emp$fmd_pct[f9_emp$level == "Unable to work"])`), followed by those out of work for a year or more and those out of work for less than a year. In contrast, employed, self-employed, and retired adults report the lowest FMD prevalence — the retired group in particular sits well below the overall average, consistent with the age gradient in Figure 8. The overall range across employment categories is roughly `r sprintf("%.0f percentage points", emp_hi$fmd_pct - emp_lo$fmd_pct)`, wider than the education gradient and comparable to the income gradient. As with the other socioeconomic correlates, these associations are cross-sectional: poor mental health can make sustained employment harder, and unemployment in turn can strain mental health, so the observed gap reflects both directions of influence.
+
+```{r fig10-marital}
+f10_mar <- base_all |>
+  filter(!is.na(marital)) |>
+  group_by(level = marital) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop") |>
+  arrange(desc(fmd_pct)) |>
+  mutate(level = factor(level, levels = level))
+
+mar_pal <- c("Separated"        = "#c0392b",
+             "Divorced"         = "#e67e22",
+             "Never married"    = "#f39c12",
+             "Unmarried couple" = "#8e44ad",
+             "Widowed"          = "#2980b9",
+             "Married"          = "#27ae60")
+
+plot_ly(f10_mar,
+        x = ~level, y = ~fmd_pct, type = "bar",
+        marker = list(color = mar_pal[as.character(f10_mar$level)]),
+        text = ~sprintf("%.1f%%", fmd_pct), textposition = "outside",
+        hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+        customdata = ~n) |>
+  layout(
+    title = list(text = paste0("Figure 10: FMD prevalence by marital status",
+                               "<br><sub>Pooled BRFSS 2020–2024, n = ",
+                               comma(sum(!is.na(base_all$marital))), "</sub>"),
+                 x = 0),
+    xaxis = list(title = "Marital status", categoryorder = "array",
+                 categoryarray = levels(f10_mar$level)),
+    yaxis = list(title = "FMD prevalence (%)", ticksuffix = "%",
+                 range = c(0, max(f10_mar$fmd_pct) * 1.15)),
+    showlegend = FALSE, margin = list(t = 80)
+  )
+```
+
+Marital status adds another layer to the socioeconomic picture. Adults who are **separated**, **divorced**, or **never married** report notably higher FMD prevalence than married adults, while widowed respondents — whose age distribution skews older — fall closer to the married group. Unmarried-couple respondents sit near the middle. The married/separated gap is about `r sprintf("%.0f percentage points", max(f10_mar$fmd_pct) - min(f10_mar$fmd_pct))`, again comparable to the gradients seen in income, education, and employment. Separation in particular is often contemporaneous with financial and housing disruption, which makes it difficult to disentangle the contribution of the transition itself from the stressors around it.
+
+## Lifestyle factors
+
+```{r fig11-smoker}
+f11_smk <- base_all |>
+  filter(!is.na(smoker)) |>
+  group_by(level = smoker) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop") |>
+  mutate(level = factor(level, levels = c("Never smoker", "Former smoker",
+                                          "Occasional smoker", "Daily smoker")))
+
+smk_pal <- c("Never smoker"      = "#27ae60",
+             "Former smoker"     = "#2980b9",
+             "Occasional smoker" = "#e67e22",
+             "Daily smoker"      = "#c0392b")
+
+plot_ly(f11_smk,
+        x = ~level, y = ~fmd_pct, type = "bar",
+        marker = list(color = smk_pal[as.character(f11_smk$level)]),
+        text = ~sprintf("%.1f%%", fmd_pct), textposition = "outside",
+        hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+        customdata = ~n) |>
+  layout(
+    title = list(text = paste0("Figure 11: FMD prevalence by smoking status",
+                               "<br><sub>Pooled BRFSS 2020–2024, n = ",
+                               comma(sum(!is.na(base_all$smoker))), "</sub>"),
+                 x = 0),
+    xaxis = list(title = "Smoking status"),
+    yaxis = list(title = "FMD prevalence (%)", ticksuffix = "%",
+                 range = c(0, max(f11_smk$fmd_pct) * 1.15)),
+    showlegend = FALSE, margin = list(t = 80)
+  )
+```
+
+Smoking status shows a clear gradient: **daily smokers** report the highest FMD prevalence, followed by occasional smokers, former smokers, and never-smokers. The gap between daily and never-smokers is roughly `r sprintf("%.0f percentage points", f11_smk$fmd_pct[f11_smk$level == "Daily smoker"] - f11_smk$fmd_pct[f11_smk$level == "Never smoker"])` — meaningful, and consistent with long-standing evidence that smoking and mental distress co-occur through both self-medication pathways and shared upstream risk factors such as socioeconomic stress.
+
+```{r fig12-drinker}
+f12_drk <- base_all |>
+  filter(!is.na(drink_any)) |>
+  group_by(level = drink_any) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+f12_year <- base_all |>
+  filter(!is.na(drink_any)) |>
+  group_by(year, level = drink_any) |>
+  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = "drop")
+
+p_drk <- plot_ly(f12_drk, x = ~level, y = ~fmd_pct, type = "bar",
+                 marker = list(color = c("#8e44ad", "#16a085")),
+                 text = ~sprintf("%.1f%%", fmd_pct),
+                 textposition = "outside",
+                 hovertemplate = "%{x}<br>FMD: %{y:.1f}%<br>n = %{customdata:,}<extra></extra>",
+                 customdata = ~n) |>
+  layout(xaxis = list(title = "Any alcohol in past 30 days"),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+p_drk_yr <- plot_ly(f12_year, x = ~year, y = ~fmd_pct, color = ~level,
+                    colors = c("Yes" = "#8e44ad", "No" = "#16a085"),
+                    type = "scatter", mode = "lines+markers",
+                    hovertemplate = "%{fullData.name}, %{x}<br>FMD: %{y:.1f}%<extra></extra>") |>
+  layout(xaxis = list(title = "BRFSS cycle", dtick = 1),
+         yaxis = list(title = "FMD (%)", ticksuffix = "%"))
+
+subplot(p_drk, p_drk_yr, nrows = 1, titleX = TRUE, titleY = TRUE,
+        margin = 0.08, widths = c(0.4, 0.6)) |>
+  layout(
+    title = list(text = paste0("Figure 12: FMD prevalence by any alcohol use (pooled and by year)",
+                               "<br><sub>BRFSS 2020–2024, n = ",
+                               comma(sum(!is.na(base_all$drink_any))), "</sub>"),
+                 x = 0),
+    legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
+    margin = list(t = 80, b = 60)
+  )
+```
+
+The alcohol picture is more subtle than the smoking one. Pooled across 2020–2024, FMD prevalence among adults who report **any** alcohol in the past 30 days is slightly *lower* than among adults who report none (`r sprintf("%.1f%% vs %.1f%%", f12_drk$fmd_pct[f12_drk$level == "Yes"], f12_drk$fmd_pct[f12_drk$level == "No"])`). This is not evidence that drinking protects against mental distress — it is consistent with a well-documented selection pattern in which adults who abstain from alcohol disproportionately include those who have stopped drinking because of health problems, medication, or previous alcohol dependence (the so-called "sick quitter" effect). The year panel confirms that this gap is present in every cycle and has not narrowed. `DRNKANY6` captures only the binary question of *any* drinking; it does not separate moderate from heavy use, which is where the association with poor mental health is typically concentrated.
+
+# Conclusion
+
+This descriptive report used five consecutive BRFSS cycles (2020–2024) to characterize the distribution of frequent mental distress among U.S. adults. Four findings stand out.
+
+First, **overall FMD prevalence has drifted upward across 2020–2024**. The movement is modest — on the order of a few percentage points — but consistent in direction, and essentially the entire upward movement is concentrated among younger adults. The 18–29 and 30–44 bands show the steepest trajectories; older adults remain near the bottom of the distribution in every cycle. Any next-stage analysis of U.S. adult mental health should take this generational divergence seriously.
+
+Second, **state-level variation is substantial and stable**. In any given cycle, the crude FMD prevalence in the highest-burden jurisdiction is roughly twice that in the lowest. The choropleth and the state × year heatmap together show that this ordering is not noise: a state near the top in 2020 is usually still near the top in 2024, and the overall upward drift shows up within most states. Appalachia and parts of the interior West report consistently higher FMD, while several Upper Midwest and Plains states sit at the low end.
+
+Third, **behavioral, psychosocial, and lifestyle factors are tightly aligned with FMD**. Loneliness and lack of emotional support are associated with markedly higher FMD in monotone, dose-response-shaped patterns. Exercise shows a smaller but clear gap. Smoking follows a strong dose-response pattern from never-smokers through daily smokers. The alcohol relationship is more subtle and reflects a selection effect between current drinkers and abstainers. Self-rated general health tracks FMD so tightly that the two should arguably be interpreted together.
+
+Fourth, **socioeconomic gradients persist across all five cycles**. FMD is most common among the lowest-income respondents, those with less formal education, those unable to work, and those who are separated, divorced, or never married. Women report higher FMD than men, and adults who could not afford a doctor visit in the past year report substantially elevated FMD. None of these patterns are new, but their consistency across five years — including years that span the pandemic and post-pandemic periods — is a reminder that the mental-health inequities of earlier years have not narrowed.
+
+This report has clear limitations. The analyses are unweighted, so the prevalences do not account for the BRFSS complex sample design; a formally weighted analysis would be necessary before reporting state-level estimates in any official capacity. All measures are self-reported and cross-sectional; associations are descriptive and should not be read causally. Tennessee did not participate in BRFSS 2024 and is missing from the 2024 state comparisons. The loneliness, emotional-support, and life-satisfaction measures come from an optional module fielded by only a subset of jurisdictions, which restricts generalizability for Figure 6. `SLEPTIM1` from the original analysis plan is not present in BRFSS 2024; a dedicated sleep-mental-health analysis would require returning to a cycle in which the sleep module was fielded. Despite these limitations, the 2020–2024 BRFSS provides a rich descriptive portrait of frequent mental distress in U.S. adults, and makes visible the kinds of inequities — generational, geographic, behavioral, and socioeconomic — that any next stage of modeling or policy work would need to take seriously.

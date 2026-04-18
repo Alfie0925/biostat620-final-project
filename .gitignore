@@ -1,0 +1,11 @@
+.DS_Store
+.Rhistory
+.RData
+.Rproj.user/
+.quarto/
+*_cache/
+*_files/
+*.XPT
+Final_Project.html
+
+/.quarto/

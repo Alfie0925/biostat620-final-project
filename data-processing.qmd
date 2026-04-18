@@ -1,0 +1,238 @@
+---
+title: "Data Processing"
+subtitle: "How the BRFSS data were acquired, cleaned, harmonized, and explored"
+author: "Boqian Mao"
+date: today
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.align = "center", fig.width = 8, fig.height = 5
+)
+```
+
+```{r libraries}
+library(tidyverse)
+library(knitr)
+library(DT)
+library(plotly)
+library(scales)
+```
+
+```{r load-data}
+brfss <- readRDS("brfss_subset.rds")
+
+base_all <- brfss |> filter(!is.na(fmd))
+base_2024 <- base_all |> filter(year == 2024)
+
+n_total_all <- nrow(brfss)
+n_base_all  <- nrow(base_all)
+n_base_2024 <- nrow(base_2024)
+n_states_2024 <- dplyr::n_distinct(base_2024$state)
+```
+
+# Overview
+
+This page documents the full data pipeline behind the main report. The analysis uses five consecutive years of CDC Behavioral Risk Factor Surveillance System (BRFSS) public-use survey data, then trims and harmonizes those files into a smaller analytic dataset focused on frequent mental distress (FMD), geography, demographic factors, and selected behavioral and psychosocial correlates.
+
+The preparation code used to build the analytic dataset is available in the project repository at [`prep_brfss_subset.R`](https://github.com/Alfie0925/biostat620-final-project/blob/main/prep_brfss_subset.R). The rendered website reads the resulting analytic file from `brfss_subset.rds`.
+
+# Raw data acquisition
+
+The raw input files are the annual BRFSS public-use SAS transport files released by the CDC. I worked from the 2020 through 2024 annual survey cycles and imported the `.XPT` files with `haven::read_xpt()`.
+
+```{r raw-data-table}
+raw_tbl <- tribble(
+  ~Year, ~File, ~Source,
+  2020, "LLCP2020.XPT", "[CDC 2020 annual data](https://www.cdc.gov/brfss/annual_data/annual_2020.html)",
+  2021, "LLCP2021.XPT", "[CDC 2021 annual data](https://www.cdc.gov/brfss/annual_data/annual_2021.html)",
+  2022, "LLCP2022.XPT", "[CDC 2022 annual data](https://www.cdc.gov/brfss/annual_data/annual_2022.html)",
+  2023, "LLCP2023.XPT", "[CDC 2023 annual data](https://www.cdc.gov/brfss/annual_data/annual_2023.html)",
+  2024, "LLCP2024.XPT", "[CDC 2024 annual data](https://www.cdc.gov/brfss/annual_data/annual_2024.html)"
+)
+
+kable(raw_tbl, escape = FALSE,
+      caption = "Raw BRFSS annual survey files used to construct the analytic dataset.")
+```
+
+The broader BRFSS data portal is the CDC's [Annual Survey Data](https://www.cdc.gov/brfss/annual_data/annual_data.htm) page. Across these five years, the public-use files contain a little over 2.18 million respondent records before analytic filtering.
+
+# Variables retained and harmonized
+
+The main report focuses on frequent mental distress plus a set of geography, time, demographic, socioeconomic, behavioral, and psychosocial variables. Only those variables were carried forward into the analytic dataset.
+
+```{r var-table}
+var_tbl <- tribble(
+  ~Variable, ~Description, ~Role,
+  "_MENT14D",  "14-day mental-distress indicator (CDC derived)",            "Primary outcome (FMD)",
+  "MENTHLTH",  "Number of poor-mental-health days in past 30",              "Secondary outcome",
+  "_STATE",    "FIPS state code",                                           "Geography",
+  "year",      "BRFSS cycle year (2020-2024)",                              "Time",
+  "EXERANY2",  "Any physical activity in past 30 days",                     "Behavioral",
+  "SDLONELY",  "How often felt lonely (optional module, 2023-2024)",        "Psychosocial",
+  "EMTSUPRT",  "How often received needed emotional support",               "Psychosocial",
+  "LSATISFY",  "Life satisfaction",                                         "Psychosocial",
+  "GENHLTH",   "Self-rated general health",                                 "Health status",
+  "_AGEG5YR",  "Age in 5-year bands",                                       "Demographic",
+  "_SEX",      "Sex at birth",                                              "Demographic",
+  "_INCOMG1",  "Income category, harmonized to 5 bins",                     "Socioeconomic",
+  "EDUCA",     "Highest education completed",                               "Socioeconomic",
+  "_BMI5CAT",  "BMI category (derived)",                                    "Health status",
+  "MEDCOST1",  "Could not see a doctor due to cost",                        "Access to care",
+  "EMPLOY1",   "Employment status",                                         "Socioeconomic",
+  "MARITAL",   "Marital status",                                            "Socioeconomic",
+  "_SMOKER3",  "Smoking status (derived)",                                  "Lifestyle",
+  "DRNKANY6",  "Any alcohol in past 30 days",                               "Lifestyle"
+)
+
+kable(var_tbl, caption = "Variables retained from the raw BRFSS files.")
+```
+
+Three variables had to be explicitly harmonized across cycles before binding the files together:
+
+- `_INCOMG` in 2020 was copied into `_INCOMG1` to match the 2021+ naming convention.
+- `MEDCOST` in 2020 was copied into `MEDCOST1`.
+- `DRNKANY5` in 2020-2021 was copied into `DRNKANY6` to align with the 2022+ variable name.
+
+Income also needed a content harmonization, not just a rename. The 2020 BRFSS income field used a 5-level scheme, while later years split the top category into multiple higher-income bins. To keep the cross-year comparisons valid, I collapsed every cycle into a shared 5-level scale: `<$15k`, `$15-25k`, `$25-35k`, `$35-50k`, and `$50k+`.
+
+# Cleaning and recoding
+
+The preparation script followed a small set of consistent rules before saving the analytic file:
+
+1. Read each yearly `.XPT` file and retain only the variables needed for the report.
+2. Add a `year` column and standardize renamed variables so all years share one schema.
+3. Remove U.S. territories by keeping only the 50 states plus the District of Columbia.
+4. Map `_STATE` FIPS codes to full state names and two-letter abbreviations.
+5. Convert BRFSS special missing codes to `NA`, while converting `MENTHLTH == 88` to 0 poor-mental-health days.
+6. Define frequent mental distress as `_MENT14D == 3`, matching the CDC's 14-day threshold.
+7. Recode selected variables into labelled factors for plotting and tabulation.
+8. Save the cleaned analytic dataset as `brfss_subset.rds`.
+
+Important recoding notes:
+
+- Tennessee is absent from the 2024 public data because it did not meet minimum reporting requirements that year.
+- `EMPLOY1 == 7` ("Retired") is a valid category and was kept as such.
+- The sleep variable `SLEPTIM1` was originally considered for analysis, but it is not available in the 2024 core file, so sleep analyses were dropped from the final report.
+
+# Sample-size flow
+
+```{r sample-flow}
+flow_year <- base_all |>
+  count(year, name = "n_valid_FMD")
+
+n_lone_all <- sum(!is.na(base_all$loneliness))
+
+flow <- tribble(
+  ~Step, ~N,
+  "All 2020-2024 respondents in the cleaned combined file",         n_total_all,
+  "Base cohort with valid FMD (50 states + DC, all years)",         n_base_all,
+  "2024 cycle only with valid FMD",                                 n_base_2024,
+  "Subset with valid loneliness/support items (optional module)",   n_lone_all
+)
+
+kable(flow, format.args = list(big.mark = ","),
+      caption = "Sample-size flow from combined file to analytic cohorts.")
+
+kable(flow_year, format.args = list(big.mark = ","),
+      col.names = c("Year", "N (valid FMD)"),
+      caption = "Valid-FMD sample size by BRFSS cycle.")
+```
+
+The main report uses pairwise complete cases rather than listwise deletion. That means a respondent can still contribute to a figure even if they are missing an unrelated variable used somewhere else on the site.
+
+# Exploratory checks
+
+These exploratory summaries helped confirm that the cleaned file looked sensible before writing the final report.
+
+## Records by year
+
+```{r eda-year-counts}
+year_counts <- brfss |>
+  count(year, name = "n")
+
+plot_ly(year_counts,
+        x = ~year, y = ~n, type = "bar",
+        marker = list(color = "#2980b9"),
+        text = ~comma(n), textposition = "outside",
+        hovertemplate = "Year %{x}<br>Rows: %{y:,}<extra></extra>") |>
+  layout(
+    title = list(text = "Exploratory check: analytic rows available by year", x = 0),
+    xaxis = list(title = "BRFSS cycle", dtick = 1),
+    yaxis = list(title = "Rows retained after cleaning"),
+    showlegend = FALSE,
+    margin = list(t = 60)
+  )
+```
+
+## Distribution of poor mental health days
+
+```{r eda-mental-days}
+mental_days_dist <- base_2024 |>
+  filter(!is.na(mental_days)) |>
+  count(mental_days) |>
+  mutate(
+    group = case_when(
+      mental_days == 0  ~ "0 days",
+      mental_days == 30 ~ "30 days",
+      mental_days >= 14 ~ "14+ days",
+      TRUE              ~ "1-13 days"
+    ),
+    group = factor(group, levels = c("0 days", "1-13 days", "14+ days", "30 days"))
+  )
+
+plot_ly(
+  mental_days_dist,
+  x = ~mental_days, y = ~n, color = ~group,
+  colors = c("0 days" = "#27ae60", "1-13 days" = "#bdc3c7",
+             "14+ days" = "#e67e22", "30 days" = "#c0392b"),
+  type = "bar",
+  hovertemplate = "%{x} days<br>Respondents: %{y:,}<extra></extra>"
+) |>
+  layout(
+    title = list(text = "Exploratory check: poor mental health days in 2024", x = 0),
+    xaxis = list(title = "Days of poor mental health in the last 30 days", dtick = 5),
+    yaxis = list(title = "Respondents"),
+    legend = list(title = list(text = "Category"), orientation = "h",
+                  x = 0.5, xanchor = "center", y = -0.2),
+    barmode = "stack",
+    margin = list(t = 60, b = 80)
+  )
+```
+
+This distribution is one reason the dichotomized FMD outcome is useful here: respondents cluster heavily at 0 days and again at the extreme upper tail, rather than forming a smooth continuous distribution.
+
+## Optional-module availability across years
+
+```{r eda-module-coverage}
+module_coverage <- tibble(
+  year = sort(unique(brfss$year)),
+  Loneliness = sapply(sort(unique(brfss$year)), function(y) sum(!is.na(brfss$loneliness[brfss$year == y]))),
+  `Emotional support` = sapply(sort(unique(brfss$year)), function(y) sum(!is.na(brfss$support[brfss$year == y]))),
+  `Life satisfaction` = sapply(sort(unique(brfss$year)), function(y) sum(!is.na(brfss$life_satisfy[brfss$year == y])))
+) |>
+  pivot_longer(-year, names_to = "Measure", values_to = "n")
+
+plot_ly(module_coverage,
+        x = ~year, y = ~Measure, z = ~n, type = "heatmap",
+        colorscale = list(c(0, "#ecf0f1"), c(1, "#c0392b")),
+        hovertemplate = "%{y}, %{x}<br>Non-missing rows: %{z:,}<extra></extra>") |>
+  layout(
+    title = list(text = "Exploratory check: optional-module coverage by year", x = 0),
+    xaxis = list(title = "BRFSS cycle", dtick = 1, side = "top"),
+    yaxis = list(title = ""),
+    margin = list(t = 60)
+  )
+```
+
+This coverage check explains why loneliness, emotional support, and life satisfaction were analyzed with pairwise complete cases and explicitly labeled as optional-module variables in the report.
+
+# Analytic dataset used by the website
+
+The website itself does not ship the raw 5 GB of source `.XPT` files. Instead, it includes a smaller analytic dataset that is sufficient to reproduce the site content:
+
+- `brfss_subset.rds`: cleaned analytic file used during rendering
+- `prep_brfss_subset.R`: reproducible preparation script
+
+This keeps the GitHub Pages repository lightweight enough to deploy while still documenting the full data pipeline and linking back to the original CDC sources.
