@@ -63,6 +63,13 @@
     "text": "Records by year\n\n\nShow code\nyear_counts &lt;- brfss |&gt;\n  count(year, name = \"n\")\n\nplot_ly(year_counts,\n        x = ~year, y = ~n, type = \"bar\",\n        marker = list(color = \"#2980b9\"),\n        text = ~comma(n), textposition = \"outside\",\n        hovertemplate = \"Year %{x}&lt;br&gt;Rows: %{y:,}&lt;extra&gt;&lt;/extra&gt;\") |&gt;\n  layout(\n    title = list(text = \"Exploratory check: analytic rows available by year\", x = 0),\n    xaxis = list(title = \"BRFSS cycle\", dtick = 1),\n    yaxis = list(title = \"Rows retained after cleaning\"),\n    showlegend = FALSE,\n    margin = list(t = 60)\n  )"
   },
   {
+    "objectID": "data-processing.html#state-sample-sizes-by-year",
+    "href": "data-processing.html#state-sample-sizes-by-year",
+    "title": "Data Processing",
+    "section": "State sample sizes by year",
+    "text": "State sample sizes by year\n\n\nShow code\nyear_state_counts &lt;- base_all |&gt;\n  count(year, state, name = \"n\")\n\nstate_order &lt;- year_state_counts |&gt;\n  group_by(state) |&gt;\n  summarise(mean_n = mean(n), .groups = \"drop\") |&gt;\n  arrange(mean_n) |&gt;\n  pull(state)\n\nyear_state_counts |&gt;\n  mutate(state = factor(state, levels = state_order)) |&gt;\n  ggplot(aes(x = n, y = state, fill = n)) +\n  geom_col(show.legend = FALSE) +\n  facet_wrap(~year, ncol = 2, scales = \"free_x\") +\n  scale_x_continuous(labels = comma) +\n  scale_fill_gradient(low = \"#d6eaf8\", high = \"#2471a3\") +\n  labs(\n    title = \"Exploratory check: state sample sizes with valid FMD by year\",\n    x = \"Respondents with valid FMD\",\n    y = NULL\n  ) +\n  theme_minimal(base_size = 11) +\n  theme(\n    strip.text = element_text(face = \"bold\"),\n    axis.text.y = element_text(size = 6),\n    panel.grid.major.y = element_blank()\n  )\n\n\n\n\n\n\n\n\n\nThis faceted bar chart shows how the valid-FMD sample size varies across states within each BRFSS cycle. The overall state ordering is based on average sample size across years, which makes it easier to compare how stable the state-level data coverage is from 2020 through 2024."
+  },
+  {
     "objectID": "data-processing.html#distribution-of-poor-mental-health-days",
     "href": "data-processing.html#distribution-of-poor-mental-health-days",
     "title": "Data Processing",

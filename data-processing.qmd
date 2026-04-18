@@ -176,6 +176,40 @@ plot_ly(year_counts,
   )
 ```
 
+## State sample sizes by year
+
+```{r eda-state-sizes, fig.height=14, fig.width=10}
+year_state_counts <- base_all |>
+  count(year, state, name = "n")
+
+state_order <- year_state_counts |>
+  group_by(state) |>
+  summarise(mean_n = mean(n), .groups = "drop") |>
+  arrange(mean_n) |>
+  pull(state)
+
+year_state_counts |>
+  mutate(state = factor(state, levels = state_order)) |>
+  ggplot(aes(x = n, y = state, fill = n)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~year, ncol = 2, scales = "free_x") +
+  scale_x_continuous(labels = comma) +
+  scale_fill_gradient(low = "#d6eaf8", high = "#2471a3") +
+  labs(
+    title = "Exploratory check: state sample sizes with valid FMD by year",
+    x = "Respondents with valid FMD",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    axis.text.y = element_text(size = 6),
+    panel.grid.major.y = element_blank()
+  )
+```
+
+This faceted bar chart shows how the valid-FMD sample size varies across states within each BRFSS cycle. The overall state ordering is based on average sample size across years, which makes it easier to compare how stable the state-level data coverage is from 2020 through 2024.
+
 ## Distribution of poor mental health days
 
 ```{r eda-mental-days}
