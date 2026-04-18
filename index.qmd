@@ -1,8 +1,8 @@
 ---
 title: "State-level variation and multi-year trends in frequent mental distress among U.S. adults"
 subtitle: "Patterns by exercise, loneliness, lifestyle, and socioeconomic factors — BRFSS 2020–2024"
-author: "Boqian Mao"
-date: today
+author: "Boqian Mao, Shuchen Wu"
+date: "April 17, 2026"
 editor: visual
 ---
 
@@ -40,27 +40,28 @@ fmd_color <- "#c0392b"
 
 ::: {.callout-important}
 ## Project Summary
+
 This website presents a descriptive analysis of **frequent mental distress (FMD)** among U.S. adults using five years of **CDC BRFSS** survey data from **2020 through 2024**.
 
-- Goal: describe how FMD varies over time, across states, and across behavioral and socioeconomic subgroups
-- Data: pooled BRFSS annual survey files, trimmed to a focused analytic dataset
-- Analytic sample: `r comma(n_base_all)` respondents with valid FMD across all years
-- Interactive content: Plotly charts and maps embedded directly in the report
+-   Goal: describe how FMD varies over time, across states, and across behavioral and socioeconomic subgroups
+-   Data: pooled BRFSS annual survey files, trimmed to a focused analytic dataset
+-   Analytic sample: `r comma(n_base_all)` respondents with valid FMD across all years
+-   Interactive content: Plotly charts and maps embedded directly in the report
 
 For the full raw-data description, cleaning steps, harmonization decisions, and exploratory checks, see the [Data Processing](data-processing.qmd) page.
 :::
 
 # Introduction
 
-Mental health has become one of the central concerns in U.S. public health surveillance. While physical health outcomes have historically dominated population health reporting, the last decade — and especially the period surrounding the COVID-19 pandemic — has seen a rapid expansion of interest in how Americans feel, function, and cope day-to-day. *Frequent mental distress* (FMD), defined as reporting 14 or more days of poor mental health in the past 30 days, is one of the most widely used surveillance indicators for adult mental health at the state level. It captures a meaningful threshold of psychological burden without requiring a clinical diagnosis, and it has been used by the Centers for Disease Control and Prevention (CDC) to track inequities in mental well-being across states, age groups, and socioeconomic strata.
+Mental health has become one of the central concerns in U.S. public health surveillance. While physical health outcomes have historically dominated population health reporting, the last decade --- and especially the period surrounding the COVID-19 pandemic --- has seen a rapid expansion of interest in how Americans feel, function, and cope day-to-day. *Frequent mental distress* (FMD), defined as reporting 14 or more days of poor mental health in the past 30 days, is one of the most widely used surveillance indicators for adult mental health at the state level. It captures a meaningful threshold of psychological burden without requiring a clinical diagnosis, and it has been used by the Centers for Disease Control and Prevention (CDC) to track inequities in mental well-being across states, age groups, and socioeconomic strata.
 
 The Behavioral Risk Factor Surveillance System (BRFSS) is an annual, state-based telephone survey conducted by the CDC that collects uniform information on health-related behaviors, chronic conditions, and preventive services. With more than 400,000 adult respondents each year, BRFSS is one of the few data sources that supports both nationally representative descriptive analysis *and* state-level comparison. Its mental-health items, combined with its batteries of questions on exercise, loneliness, emotional support, employment, marriage, smoking, drinking, and socioeconomic status, make it well suited for the research questions in this report.
 
-This report has a descriptive focus, drawing on five consecutive BRFSS cycles (2020 through 2024) to answer four questions: (1) How has overall FMD prevalence shifted across the pandemic and post-pandemic years? (2) How does FMD vary across U.S. states, and has the geographic pattern been stable over time? (3) How is FMD patterned by behavioral, psychosocial, and lifestyle factors — exercise, loneliness, emotional support, smoking, drinking, and general health? (4) Which demographic and socioeconomic groups — by age, sex, income, education, employment, and marital status — report the highest FMD prevalence? No modeling or causal inference is attempted; the goal is to present a clear, layered picture of where mental distress is concentrated and which correlates stand out most in BRFSS 2020–2024.
+This report has a descriptive focus, drawing on five consecutive BRFSS cycles (2020 through 2024) to answer four questions: (1) How has overall FMD prevalence shifted across the pandemic and post-pandemic years? (2) How does FMD vary across U.S. states, and has the geographic pattern been stable over time? (3) How is FMD patterned by behavioral, psychosocial, and lifestyle factors --- exercise, loneliness, emotional support, smoking, drinking, and general health? (4) Which demographic and socioeconomic groups --- by age, sex, income, education, employment, and marital status --- report the highest FMD prevalence? No modeling or causal inference is attempted; the goal is to present a clear, layered picture of where mental distress is concentrated and which correlates stand out most in BRFSS 2020--2024.
 
 # Data and Methods
 
-The analysis is based on the 2020–2024 [Behavioral Risk Factor Surveillance System (BRFSS)](https://www.cdc.gov/brfss/annual_data/annual_data.htm) annual survey files released by the CDC. I imported the raw `LLCP2020.XPT` through `LLCP2024.XPT` files, harmonized renamed variables across years, removed territories, recoded BRFSS missing values, and defined frequent mental distress as `_MENT14D == 3`.
+The analysis is based on the 2020--2024 [Behavioral Risk Factor Surveillance System (BRFSS)](https://www.cdc.gov/brfss/annual_data/annual_data.htm) annual survey files released by the CDC. I imported the raw `LLCP2020.XPT` through `LLCP2024.XPT` files, harmonized renamed variables across years, removed territories, recoded BRFSS missing values, and defined frequent mental distress as `_MENT14D == 3`.
 
 The cleaned analytic dataset used by this website contains `r comma(n_total_all)` rows, with `r comma(n_base_all)` respondents contributing to the pooled valid-FMD analyses and `r comma(n_base)` respondents contributing to the 2024 state snapshot. The preparation code lives in [`prep_brfss_subset.R`](https://github.com/Alfie0925/biostat620-final-project/blob/main/prep_brfss_subset.R), and the site renders from `brfss_subset.rds`.
 
@@ -112,7 +113,9 @@ plot_ly(f1_data, x = ~Status, y = ~Proportion, type = "bar",
   )
 ```
 
-In the most recent BRFSS cycle, **`r sprintf("%.1f%%", fmd_overall_pct)`** of the `r comma(n_base)` adults in the base cohort reported frequent mental distress — that is, 14 or more days of poor mental health in the past 30. This figure sits in the range reported by the CDC for recent BRFSS cycles (historically ~13–15%) and provides the reference point against which the state-level and subgroup comparisons below should be read.
+**Figure 1** presents the overall prevalence of frequent mental distress (FMD) in the 2024 BRFSS analytic sample and serves as the starting point for the rest of the report. We include this figure first to introduce the project\'s main outcome and to establish a national-level reference point before examining differences across states, years, and subgroups.
+
+Among 442,292 U.S. adults in the base cohort, **13.9%** met the definition of FMD, meaning they reported poor mental health on 14 or more days in the past 30 days, while **86.1%** did not. This indicates that frequent mental distress affects a substantial share of adults rather than a small exceptional group. Because the burden is already sizeable at the national level, the next step is to examine whether it is distributed evenly across states and populations, or whether certain places and groups bear a disproportionate share of that burden.
 
 ```{r fig2-fmd-by-year}
 f2_year <- base_all |>
@@ -145,7 +148,11 @@ yr_hi_year <- f2_year$year[which.max(f2_year$fmd_pct)]
 yr_24 <- f2_year$fmd_pct[f2_year$year == 2024]
 ```
 
-FMD prevalence has drifted upward across the five cycles. The 2020 cycle — fielded mostly during the first pandemic year — reported **`r sprintf("%.1f%%", yr_lo)`**; the peak across the five years was **`r sprintf("%.1f%%", yr_hi)`** in **`r yr_hi_year`**, and the 2024 rate is **`r sprintf("%.1f%%", yr_24)`**. The movement is modest in absolute terms (a few percentage points) but consistent in direction: in a population of ~260 million U.S. adults, a one-percentage-point shift corresponds to roughly 2.6 million additional people reporting frequent mental distress, so even a small shift is substantively meaningful.
+**Figure 2** presents the national time trend in frequent mental distress (FMD) across the 2020--2024 BRFSS cycles. This figure is included because the project is concerned not only with geographic differences, but also with whether the burden of poor mental health has changed over time at the national level.
+
+The pattern suggests a **modest but overall upward trend**. FMD prevalence increased from **12.3% in 2020** to **13.9% in 2024**, with most of the rise occurring between 2020 and 2022. While the estimate dipped slightly in 2023, it did not return to earlier levels, and the highest prevalence was observed in 2024. Thus, the five-year pattern is more consistent with a gradual increase than with stability.
+
+This national trend provides the broader context for the analyses that follow. If FMD has increased over time overall, the next question is whether that increase was shared similarly across states and demographic groups, or whether some populations experienced a greater increase than others.
 
 ```{r fig3-menthlth}
 f3_data <- base |>
@@ -181,11 +188,13 @@ plot_ly(f3_data, x = ~mental_days, y = ~n, color = ~highlight,
   )
 ```
 
-The distribution of `MENTHLTH` is strongly bimodal: a large mass of respondents reported **0 days** of poor mental health, and a second, much smaller but non-trivial mass reported the maximum of **30 days**. Almost nobody clusters in the middle ranges (10–20 days). This bimodality is part of what motivates dichotomizing at the 14-day threshold — the conceptual groups "essentially fine" and "persistently distressed" are easier to separate than any continuous summary of this distribution.
+**Figure 3** examines the distribution of `MENTHLTH`, the reported number of poor-mental-health days in the past 30 days. We include this figure to move beyond overall prevalence and better understand the shape of the underlying measure that defines the project\'s main outcome.
+
+The distribution is strongly right-skewed and concentrated at key points rather than spread smoothly across the full range. Most respondents reported **0 days**, while a smaller but nontrivial group reported very high values, especially **30 days**. The middle range is comparatively sparse. This pattern suggests that persistent poor mental health is meaningfully different from occasional poor mental health, supporting the decision to use **FMD (14 or more days)** as the primary outcome in the later analyses.
 
 ## State-level variation
 
-State-level prevalence of FMD in 2024 ranges widely, and the state × year heatmap in Figure 4c shows that the ordering is largely stable across cycles. The figures below show the same quantity in three complementary ways: a ranked bar chart for 2024, a choropleth map of 2024, and a state × year heatmap for 2020–2024.
+State-level prevalence of FMD in 2024 ranges widely, and the state × year heatmap in Figure 4c shows that the ordering is largely stable across cycles. The figures below show the same quantity in three complementary ways: a ranked bar chart for 2024, a choropleth map of 2024, and a state × year heatmap for 2020--2024.
 
 ```{r fig4a-state-bar, fig.height=9}
 state_tbl <- base |>
@@ -213,6 +222,12 @@ plot_ly(state_tbl,
   )
 ```
 
+**Figure 4a** shows the 2024 prevalence of frequent mental distress (FMD) across states, ordered from highest to lowest. We include this ranked bar chart because it provides the clearest direct comparison of states and allows us to assess whether the burden of FMD is distributed evenly across the country.
+
+The pattern suggests notable geographic variation. States such as **Kentucky, Arkansas, and Nevada** appear near the top of the ranking, while **North Dakota, the District of Columbia, and Nebraska** are among the lowest. Although many states cluster in the middle, the full range is wide enough to indicate that state context may matter for understanding the distribution of frequent mental distress.
+
+This figure is central to the project\'s state-level focus. It shows that the overall national prevalence conceals substantial interstate differences, providing motivation for the map and multi-year heatmap that follow.
+
 ```{r fig4b-state-map}
 plot_ly(state_tbl, type = "choropleth",
         locations = ~abb, locationmode = "USA-states",
@@ -231,6 +246,12 @@ plot_ly(state_tbl, type = "choropleth",
     margin = list(t = 60)
   )
 ```
+
+**Figure 4b** shows the 2024 state-level prevalence of frequent mental distress (FMD) as a choropleth map. This figure complements the ranked bar chart in Figure 4a by emphasizing the **geographic pattern** of variation rather than the exact ordering of states.
+
+The map suggests that higher FMD prevalence is concentrated in parts of the **South and Appalachian region**, while lower prevalence appears more common in parts of the **Upper Midwest and Great Plains**. Thus, the interstate differences shown earlier do not appear geographically random.
+
+**Tennessee is blank because no reportable 2024 estimate was available in the public BRFSS file.** As noted in the BRFSS documentation, the state did not collect enough data in 2024 to meet the minimum requirements for inclusion. This missing state should therefore be interpreted as unavailable data rather than low prevalence.
 
 ```{r fig4c-state-heatmap, fig.height=11}
 state_year <- base_all |>
@@ -264,6 +285,12 @@ plot_ly(state_year,
   )
 ```
 
+**Figure 4c** extends the state-level analysis by displaying FMD prevalence for each state across BRFSS cycles from 2020 to 2024. We include this heatmap because it allows both cross-state and across-year comparison in a single display, making it easier to assess whether state differences persist over time.
+
+Overall, the heatmap suggests that state differences are fairly persistent across cycles. States that are relatively high in one year often remain toward the higher end in other years, while lower-prevalence states tend to remain lower over time. This indicates that the state-level variation shown in Figures 4a and 4b is not simply a one-year anomaly.
+
+**Blank cells indicate that no reportable BRFSS estimate was available for that specific state-year combination; they do not represent zero prevalence.** For example, **Tennessee is missing in 2024 because it was not included in the 2024 public-use file after failing to meet minimum reporting requirements.** Similarly, **Kentucky and Pennsylvania are missing in 2023 because the 2023 BRFSS documentation states that those states were unable to collect enough data to meet the minimum requirements for inclusion in the public data set.** Other blank cells should be interpreted in the same way: as unavailable estimates rather than substantive zero values.
+
 ```{r tab1-state}
 state_tbl |>
   arrange(desc(fmd_pct)) |>
@@ -286,7 +313,11 @@ lo <- state_tbl |> arrange(fmd_pct)       |> head(3)
 range_pp <- diff(range(state_tbl$fmd_pct))
 ```
 
-State-level FMD prevalence in 2024 ranged from **`r sprintf("%.1f%%", min(state_tbl$fmd_pct))`** (`r lo$state[1]`) to **`r sprintf("%.1f%%", max(state_tbl$fmd_pct))`** (`r hi$state[1]`) — a spread of about **`r sprintf("%.1f percentage points", range_pp)`**. The highest-prevalence states in 2024 are **`r knitr::combine_words(hi$state)`**; the lowest are **`r knitr::combine_words(lo$state)`**. The choropleth makes the rough geography visible: elevated FMD prevalence is concentrated in pockets of Appalachia and the interior West, while several Great Plains and Upper Midwest states report markedly lower prevalence. The state × year heatmap (Figure 4c) shows that this ordering is quite stable across 2020–2024 — a state near the top in 2020 is usually still near the top in 2024 — but it also makes visible the overall upward drift within most states across the five cycles. Note that these are crude, unweighted state prevalences — they do not adjust for age, sex, or BRFSS sampling design.
+**Table 1** reports the exact 2024 state-level FMD prevalence estimates and sample sizes that underlie Figures 4a--4c. It is included to supplement the visualizations with precise numeric values.
+
+The table shows substantial interstate variation, with FMD prevalence ranging from **9.9% in North Dakota** to **17.6% in Oregon and Kentucky**. Other high-prevalence states include **Louisiana, Arkansas, and Oklahoma**, whereas **New Hampshire, the District of Columbia, and South Dakota** are among the lowest. This roughly **7.7-percentage-point spread** reinforces the conclusion that the burden of frequent mental distress is not evenly distributed across states.
+
+Because the table includes exact values, it also helps verify the patterns suggested by the ranked bar chart, map, and heatmap. These estimates are **crude, unweighted prevalences** and should therefore be interpreted as descriptive rather than fully adjusted comparisons.
 
 ## Demographic trends across years
 
@@ -340,13 +371,16 @@ subplot(p_sex, p_age, nrows = 1, titleX = TRUE, titleY = TRUE,
   )
 ```
 
-The year-over-year trends expose *who* is driving the aggregate drift. The sex panel shows that both men and women trended up from 2020 through the mid-2020s, with women consistently reporting higher FMD prevalence than men in every cycle — the gap is persistent rather than closing. The age panel is more striking: the upward movement is concentrated in the youngest bands, especially 18–29, where FMD prevalence has risen sharply across the five cycles. Older adults — particularly 70+ — remain near the bottom of the distribution in every year. The generational divergence is one of the clearest patterns in the data.
+**Figure 5** examines how FMD trends differed by sex and age from 2020 to 2024. This figure is included to show which demographic groups are driving the broader increase in frequent mental distress observed at the national level.
+
+The sex panel indicates that both men and women experienced increasing FMD prevalence over time, but women remained consistently higher in every cycle. The age panel shows even stronger separation: adults aged **18--29** had the highest prevalence throughout the period and experienced the sharpest increase, whereas adults aged **70+** remained the lowest in every year. Thus, the overall rise in FMD appears to be driven disproportionately by younger adults, while sex differences remained persistent across time.
 
 ## Behavioral and psychosocial correlates
 
-::: {.callout-note}
+::: callout-note
 ## Module note
-The next figure uses the optional **Social Determinants / Health Equity** module, which only a subset of jurisdictions fielded in each cycle: `SDLONELY` appears in 2023 and 2024 only, while `EMTSUPRT` and `LSATISFY` appear in 2022–2024. Figure 6 pools the available cycles, with `r comma(sum(!is.na(base_all$loneliness)))` respondents for loneliness and `r comma(sum(!is.na(base_all$support)))` for emotional support.
+
+The next figure uses the optional **Social Determinants / Health Equity** module, which only a subset of jurisdictions fielded in each cycle: `SDLONELY` appears in 2023 and 2024 only, while `EMTSUPRT` and `LSATISFY` appear in 2022--2024. Figure 6 pools the available cycles, with `r comma(sum(!is.na(base_all$loneliness)))` respondents for loneliness and `r comma(sum(!is.na(base_all$support)))` for emotional support.
 :::
 
 ```{r fig6-loneliness-support}
@@ -400,7 +434,11 @@ subplot(p_lone, p_supp, nrows = 1, titleX = TRUE, titleY = TRUE,
   )
 ```
 
-The loneliness gradient is striking. Among adults who say they "always" feel lonely, FMD prevalence is several times higher than among adults who "never" do. The monotone pattern across all five levels — Always → Usually → Sometimes → Rarely → Never — is exactly what one would expect if persistent loneliness and persistent mental distress frequently occur together. The emotional-support panel mirrors this: respondents who rarely or never receive needed support report much higher FMD than those who usually or always do. Neither figure establishes causality; loneliness and distress plausibly reinforce each other, and both can share upstream drivers such as social isolation, financial hardship, or chronic illness.
+**Figure 6** explores the relationship between FMD and two psychosocial factors: loneliness and needed emotional support. These variables are included because they help explain which social experiences are most strongly associated with frequent mental distress.
+
+The loneliness gradient is especially striking. FMD prevalence falls from **56.7%** among adults who **always** feel lonely to **5.4%** among those who **never** do, with a clear stepwise decline across intermediate categories. Emotional support shows a similarly strong pattern: adults who **rarely** receive the support they need have much higher FMD prevalence than those who **usually** or **always** do. Together, these panels suggest that loneliness and limited emotional support are among the strongest correlates shown in the report.
+
+Because these measures come from an **optional module**, they are available only for selected jurisdictions and years, so the figure should be interpreted as pooled evidence from available cycles rather than a fully national trend. These patterns are also correlational and should not be interpreted as causal.
 
 ```{r fig7-exercise-genhlth}
 f7_ex <- base_all |>
@@ -443,7 +481,11 @@ subplot(p_ex, p_gh, nrows = 1, titleX = TRUE, titleY = TRUE,
   )
 ```
 
-Figure 7 extends the behavioral picture. Adults who report any physical activity in the past 30 days have meaningfully lower FMD prevalence than those who report none. The general-health gradient is even steeper: FMD prevalence rises monotonically from respondents who rate their general health "excellent" to those who rate it "poor," and the gap between the endpoints is substantial. Self-rated general health is of course not independent of mental health — the two move together — but the tight alignment reinforces that FMD is not an isolated symptom but part of a broader pattern of reported ill-being.
+**Figure 7** examines FMD prevalence by recent physical activity and self-rated general health. These variables are included to show how FMD relates to broader behavioral and health-status measures.
+
+Adults who reported **any physical activity** in the past 30 days had lower FMD prevalence (**11.4%**) than those who reported **none** (**19.7%**). The general-health panel shows an even stronger gradient: FMD prevalence rises steadily from **5.6%** among adults in **excellent** health to **44.5%** among those in **poor** health. Together, these patterns suggest that frequent mental distress is strongly linked to broader patterns of inactivity and poor overall health.
+
+Because self-rated general health overlaps conceptually with mental health, the right panel should be interpreted as descriptive association rather than causal evidence. Still, the size and monotonicity of the gradient make it one of the clearest correlates in the report.
 
 ## Socioeconomic and demographic differences
 
@@ -504,7 +546,11 @@ mc_gap <- base_all |> filter(!is.na(med_cost)) |>
   group_by(med_cost) |> summarise(pct = mean(fmd) * 100, .groups = "drop")
 ```
 
-The socioeconomic and demographic pattern is consistent with decades of public-health reporting. FMD prevalence is highest among the youngest adults (18–24 and 25–29) and declines sharply with age, approaching its lowest levels in the 70+ bands. The income gradient runs opposite from income: respondents in the lowest income category report FMD at roughly double the rate of those in the highest. Education shows a parallel gradient. Both women and men who could not afford to see a doctor in the past year (`MEDCOST1 == Yes`) report FMD at substantially elevated rates (`r sprintf("%.1f%%", mc_gap$pct[mc_gap$med_cost == "Yes"])` vs. `r sprintf("%.1f%%", mc_gap$pct[mc_gap$med_cost == "No"])`), highlighting the entanglement of mental distress with access to care. Women report higher FMD than men (`r sprintf("%.1f%%", sex_gap$pct[sex_gap$sex == "Female"])` vs. `r sprintf("%.1f%%", sex_gap$pct[sex_gap$sex == "Male"])`) — a gap consistent with earlier BRFSS cycles.
+**Figure 8** examines FMD prevalence across age, income, and education, highlighting how the burden of frequent mental distress is distributed across major demographic and socioeconomic gradients.
+
+The age pattern is strongly monotone: FMD prevalence is highest among younger adults and falls steadily with age, from **22.8%** among those aged **18--24** to **6.2%** among those aged **80+**. The income gradient is similarly clear, with prevalence declining from **29.1%** in the **lowest income group** to **9.8%** in the **highest**. Education also shows important patterning, though less perfectly linearly: prevalence is relatively high among respondents with lower educational attainment and lowest among **college graduates**.
+
+Overall, the figure shows that FMD is disproportionately concentrated among younger and more socioeconomically disadvantaged adults.
 
 ```{r fig9-employment}
 f9_emp <- base_all |>
@@ -548,7 +594,11 @@ emp_hi <- f9_emp |> slice(1)
 emp_lo <- f9_emp |> arrange(fmd_pct) |> slice(1)
 ```
 
-Employment status is one of the sharpest correlates of FMD in the data. Adults who report being **unable to work** have the highest prevalence of frequent mental distress by a wide margin (`r sprintf("%.1f%%", f9_emp$fmd_pct[f9_emp$level == "Unable to work"])`), followed by those out of work for a year or more and those out of work for less than a year. In contrast, employed, self-employed, and retired adults report the lowest FMD prevalence — the retired group in particular sits well below the overall average, consistent with the age gradient in Figure 8. The overall range across employment categories is roughly `r sprintf("%.0f percentage points", emp_hi$fmd_pct - emp_lo$fmd_pct)`, wider than the education gradient and comparable to the income gradient. As with the other socioeconomic correlates, these associations are cross-sectional: poor mental health can make sustained employment harder, and unemployment in turn can strain mental health, so the observed gap reflects both directions of influence.
+**Figure 9** shows FMD prevalence by employment status, adding another important socioeconomic dimension to the results. Employment status is relevant because it captures differences in labor-force attachment, disability, and economic stability that may be closely tied to mental health.
+
+The strongest burden appears among adults **unable to work** (**37.7%**), followed by those **out of work for 1 year or more** (**27.2%**) and **out of work for less than 1 year** (**25.4%**). By contrast, **retired** (**7.9%**), **self-employed** (**10.2%**), and **employed for wages** (**12.7%**) adults show much lower prevalence. These differences indicate that FMD is strongly stratified by employment status.
+
+Because the figure is descriptive, the pattern should not be interpreted causally. Mental distress may both contribute to and result from weaker labor-force attachment.
 
 ```{r fig10-marital}
 f10_mar <- base_all |>
@@ -584,7 +634,11 @@ plot_ly(f10_mar,
   )
 ```
 
-Marital status adds another layer to the socioeconomic picture. Adults who are **separated**, **divorced**, or **never married** report notably higher FMD prevalence than married adults, while widowed respondents — whose age distribution skews older — fall closer to the married group. Unmarried-couple respondents sit near the middle. The married/separated gap is about `r sprintf("%.0f percentage points", max(f10_mar$fmd_pct) - min(f10_mar$fmd_pct))`, again comparable to the gradients seen in income, education, and employment. Separation in particular is often contemporaneous with financial and housing disruption, which makes it difficult to disentangle the contribution of the transition itself from the stressors around it.
+**Figure 10** shows FMD prevalence by marital status, adding another social dimension to the analysis. This figure is included because relationship status may capture differences in social support, household context, and recent life stress.
+
+The highest prevalence appears among adults who are **separated** (**25.3%**), followed by those who are **never married**, in an **unmarried couple**, or **divorced**. **Married** adults have the lowest prevalence (**9.3%**), while **widowed** adults fall closer to the lower end of the distribution. These differences suggest that FMD is patterned not only by income, education, and employment, but also by partnership status and social context.
+
+Because these comparisons are descriptive, they should not be interpreted causally. Marital status is likely entangled with age, financial conditions, and other life circumstances that may also shape mental distress.
 
 ## Lifestyle factors
 
@@ -619,7 +673,9 @@ plot_ly(f11_smk,
   )
 ```
 
-Smoking status shows a clear gradient: **daily smokers** report the highest FMD prevalence, followed by occasional smokers, former smokers, and never-smokers. The gap between daily and never-smokers is roughly `r sprintf("%.0f percentage points", f11_smk$fmd_pct[f11_smk$level == "Daily smoker"] - f11_smk$fmd_pct[f11_smk$level == "Never smoker"])` — meaningful, and consistent with long-standing evidence that smoking and mental distress co-occur through both self-medication pathways and shared upstream risk factors such as socioeconomic stress.
+**Figure 11** shows FMD prevalence by smoking status, adding a lifestyle-related correlate to the analysis. The pattern is strongly ordered: prevalence is lowest among **never smokers** and highest among **daily smokers**, with **former** and **occasional smokers** falling in between.
+
+In particular, **daily smokers** report FMD prevalence of **25.7%**, compared with **11.0%** among **never smokers**. This large gap suggests that smoking status is strongly associated with the burden of frequent mental distress. Because the figure is descriptive, however, it should not be interpreted causally; smoking and mental distress may reinforce one another and may also reflect shared upstream risk factors.
 
 ```{r fig12-drinker}
 f12_drk <- base_all |>
@@ -660,18 +716,20 @@ subplot(p_drk, p_drk_yr, nrows = 1, titleX = TRUE, titleY = TRUE,
   )
 ```
 
-The alcohol picture is more subtle than the smoking one. Pooled across 2020–2024, FMD prevalence among adults who report **any** alcohol in the past 30 days is slightly *lower* than among adults who report none (`r sprintf("%.1f%% vs %.1f%%", f12_drk$fmd_pct[f12_drk$level == "Yes"], f12_drk$fmd_pct[f12_drk$level == "No"])`). This is not evidence that drinking protects against mental distress — it is consistent with a well-documented selection pattern in which adults who abstain from alcohol disproportionately include those who have stopped drinking because of health problems, medication, or previous alcohol dependence (the so-called "sick quitter" effect). The year panel confirms that this gap is present in every cycle and has not narrowed. `DRNKANY6` captures only the binary question of *any* drinking; it does not separate moderate from heavy use, which is where the association with poor mental health is typically concentrated.
+**Figure 12** shows FMD prevalence by any alcohol use in the past 30 days, both pooled across years and separately by cycle. This figure is included because alcohol use is a relevant lifestyle factor, but its association with mental distress is more difficult to interpret than simpler behavioral measures.
+
+Across the pooled sample, adults reporting **any alcohol use** had slightly lower FMD prevalence (**12.5%**) than those reporting **none** (**14.3%**), and this pattern was consistent across all five BRFSS cycles. Still, this should not be read as evidence that drinking is protective. The \"no alcohol\" category likely includes people who abstain because of illness, medication, prior alcohol dependence, or other health-related reasons, while the variable itself does not distinguish moderate from heavy drinking. The figure should therefore be interpreted as a descriptive comparison of broad groups rather than as evidence of a beneficial effect of alcohol use.
 
 # Conclusion
 
-This descriptive report used five consecutive BRFSS cycles (2020–2024) to characterize the distribution of frequent mental distress among U.S. adults. Four findings stand out.
+This descriptive report used five consecutive BRFSS cycles (2020--2024) to characterize the distribution of frequent mental distress among U.S. adults. Four findings stand out.
 
-First, **overall FMD prevalence has drifted upward across 2020–2024**. The movement is modest — on the order of a few percentage points — but consistent in direction, and essentially the entire upward movement is concentrated among younger adults. The 18–29 and 30–44 bands show the steepest trajectories; older adults remain near the bottom of the distribution in every cycle. Any next-stage analysis of U.S. adult mental health should take this generational divergence seriously.
+First, **overall FMD prevalence has drifted upward across 2020--2024**. The movement is modest --- on the order of a few percentage points --- but consistent in direction, and essentially the entire upward movement is concentrated among younger adults. The 18--29 and 30--44 bands show the steepest trajectories; older adults remain near the bottom of the distribution in every cycle. Any next-stage analysis of U.S. adult mental health should take this generational divergence seriously.
 
 Second, **state-level variation is substantial and stable**. In any given cycle, the crude FMD prevalence in the highest-burden jurisdiction is roughly twice that in the lowest. The choropleth and the state × year heatmap together show that this ordering is not noise: a state near the top in 2020 is usually still near the top in 2024, and the overall upward drift shows up within most states. Appalachia and parts of the interior West report consistently higher FMD, while several Upper Midwest and Plains states sit at the low end.
 
 Third, **behavioral, psychosocial, and lifestyle factors are tightly aligned with FMD**. Loneliness and lack of emotional support are associated with markedly higher FMD in monotone, dose-response-shaped patterns. Exercise shows a smaller but clear gap. Smoking follows a strong dose-response pattern from never-smokers through daily smokers. The alcohol relationship is more subtle and reflects a selection effect between current drinkers and abstainers. Self-rated general health tracks FMD so tightly that the two should arguably be interpreted together.
 
-Fourth, **socioeconomic gradients persist across all five cycles**. FMD is most common among the lowest-income respondents, those with less formal education, those unable to work, and those who are separated, divorced, or never married. Women report higher FMD than men, and adults who could not afford a doctor visit in the past year report substantially elevated FMD. None of these patterns are new, but their consistency across five years — including years that span the pandemic and post-pandemic periods — is a reminder that the mental-health inequities of earlier years have not narrowed.
+Fourth, **socioeconomic gradients persist across all five cycles**. FMD is most common among the lowest-income respondents, those with less formal education, those unable to work, and those who are separated, divorced, or never married. Women report higher FMD than men, and adults who could not afford a doctor visit in the past year report substantially elevated FMD. None of these patterns are new, but their consistency across five years --- including years that span the pandemic and post-pandemic periods --- is a reminder that the mental-health inequities of earlier years have not narrowed.
 
-This report has clear limitations. The analyses are unweighted, so the prevalences do not account for the BRFSS complex sample design; a formally weighted analysis would be necessary before reporting state-level estimates in any official capacity. All measures are self-reported and cross-sectional; associations are descriptive and should not be read causally. Tennessee did not participate in BRFSS 2024 and is missing from the 2024 state comparisons. The loneliness, emotional-support, and life-satisfaction measures come from an optional module fielded by only a subset of jurisdictions, which restricts generalizability for Figure 6. `SLEPTIM1` from the original analysis plan is not present in BRFSS 2024; a dedicated sleep-mental-health analysis would require returning to a cycle in which the sleep module was fielded. Despite these limitations, the 2020–2024 BRFSS provides a rich descriptive portrait of frequent mental distress in U.S. adults, and makes visible the kinds of inequities — generational, geographic, behavioral, and socioeconomic — that any next stage of modeling or policy work would need to take seriously.
+This report has clear limitations. The analyses are unweighted, so the prevalences do not account for the BRFSS complex sample design; a formally weighted analysis would be necessary before reporting state-level estimates in any official capacity. All measures are self-reported and cross-sectional; associations are descriptive and should not be read causally. Tennessee did not participate in BRFSS 2024 and is missing from the 2024 state comparisons. The loneliness, emotional-support, and life-satisfaction measures come from an optional module fielded by only a subset of jurisdictions, which restricts generalizability for Figure 6. `SLEPTIM1` from the original analysis plan is not present in BRFSS 2024; a dedicated sleep-mental-health analysis would require returning to a cycle in which the sleep module was fielded. Despite these limitations, the 2020--2024 BRFSS provides a rich descriptive portrait of frequent mental distress in U.S. adults, and makes visible the kinds of inequities --- generational, geographic, behavioral, and socioeconomic --- that any next stage of modeling or policy work would need to take seriously.

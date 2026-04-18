@@ -2,7 +2,7 @@
 title: "Data Processing"
 subtitle: "How the BRFSS data were acquired, cleaned, harmonized, and explored"
 author: "Boqian Mao"
-date: today
+date: "April 17, 2026"
 ---
 
 ```{r setup, include=FALSE}
