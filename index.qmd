@@ -1,6 +1,5 @@
 ---
 title: "State-level variation and multi-year trends in frequent mental distress among U.S. adults"
-subtitle: "Patterns by exercise, loneliness, lifestyle, and socioeconomic factors — BRFSS 2020–2024"
 author: "Boqian Mao, Shuchen Wu"
 date: "April 17, 2026"
 editor: visual
