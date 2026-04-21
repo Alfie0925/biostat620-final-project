@@ -12,8 +12,6 @@ website:
         text: Home
       - href: data-processing.qmd
         text: Data Processing
-      - href: presentation.qmd
-        text: Presentation
     right:
       - icon: github
         href: "https://github.com/Alfie0925/biostat620-final-project"
