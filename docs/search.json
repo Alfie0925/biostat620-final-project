@@ -49,6 +49,146 @@
     "text": "Lifestyle factors\n\n\nShow code\nf11_smk &lt;- base_all |&gt;\n  filter(!is.na(smoker)) |&gt;\n  group_by(level = smoker) |&gt;\n  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = \"drop\") |&gt;\n  mutate(level = factor(level, levels = c(\"Never smoker\", \"Former smoker\",\n                                          \"Occasional smoker\", \"Daily smoker\")))\n\nsmk_pal &lt;- c(\"Never smoker\"      = \"#27ae60\",\n             \"Former smoker\"     = \"#2980b9\",\n             \"Occasional smoker\" = \"#e67e22\",\n             \"Daily smoker\"      = \"#c0392b\")\n\nplot_ly(f11_smk,\n        x = ~level, y = ~fmd_pct, type = \"bar\",\n        marker = list(color = smk_pal[as.character(f11_smk$level)]),\n        text = ~sprintf(\"%.1f%%\", fmd_pct), textposition = \"outside\",\n        hovertemplate = \"%{x}&lt;br&gt;FMD: %{y:.1f}%&lt;br&gt;n = %{customdata:,}&lt;extra&gt;&lt;/extra&gt;\",\n        customdata = ~n) |&gt;\n  layout(\n    title = list(text = paste0(\"Figure 11: FMD prevalence by smoking status\",\n                               \"&lt;br&gt;&lt;sub&gt;Pooled BRFSS 2020–2024, n = \",\n                               comma(sum(!is.na(base_all$smoker))), \"&lt;/sub&gt;\"),\n                 x = 0),\n    xaxis = list(title = \"Smoking status\"),\n    yaxis = list(title = \"FMD prevalence (%)\", ticksuffix = \"%\",\n                 range = c(0, max(f11_smk$fmd_pct) * 1.15)),\n    showlegend = FALSE, margin = list(t = 80)\n  )\n\n\n\n\n\n\nFigure 11 shows FMD prevalence by smoking status, adding a lifestyle-related correlate to the analysis. The pattern is strongly ordered: prevalence is lowest among never smokers and highest among daily smokers, with former and occasional smokers falling in between.\nIn particular, daily smokers report FMD prevalence of 25.7%, compared with 11.0% among never smokers. This large gap suggests that smoking status is strongly associated with the burden of frequent mental distress. Because the figure is descriptive, however, it should not be interpreted causally; smoking and mental distress may reinforce one another and may also reflect shared upstream risk factors.\n\n\nShow code\nf12_drk &lt;- base_all |&gt;\n  filter(!is.na(drink_any)) |&gt;\n  group_by(level = drink_any) |&gt;\n  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = \"drop\")\n\nf12_year &lt;- base_all |&gt;\n  filter(!is.na(drink_any)) |&gt;\n  group_by(year, level = drink_any) |&gt;\n  summarise(n = n(), fmd_pct = mean(fmd) * 100, .groups = \"drop\")\n\np_drk &lt;- plot_ly(f12_drk, x = ~level, y = ~fmd_pct, type = \"bar\",\n                 marker = list(color = c(\"#8e44ad\", \"#16a085\")),\n                 text = ~sprintf(\"%.1f%%\", fmd_pct),\n                 textposition = \"outside\",\n                 hovertemplate = \"%{x}&lt;br&gt;FMD: %{y:.1f}%&lt;br&gt;n = %{customdata:,}&lt;extra&gt;&lt;/extra&gt;\",\n                 customdata = ~n) |&gt;\n  layout(xaxis = list(title = \"Any alcohol in past 30 days\"),\n         yaxis = list(title = \"FMD (%)\", ticksuffix = \"%\"))\n\np_drk_yr &lt;- plot_ly(f12_year, x = ~year, y = ~fmd_pct, color = ~level,\n                    colors = c(\"Yes\" = \"#8e44ad\", \"No\" = \"#16a085\"),\n                    type = \"scatter\", mode = \"lines+markers\",\n                    hovertemplate = \"%{fullData.name}, %{x}&lt;br&gt;FMD: %{y:.1f}%&lt;extra&gt;&lt;/extra&gt;\") |&gt;\n  layout(xaxis = list(title = \"BRFSS cycle\", dtick = 1),\n         yaxis = list(title = \"FMD (%)\", ticksuffix = \"%\"))\n\nsubplot(p_drk, p_drk_yr, nrows = 1, titleX = TRUE, titleY = TRUE,\n        margin = 0.08, widths = c(0.4, 0.6)) |&gt;\n  layout(\n    title = list(text = paste0(\"Figure 12: FMD prevalence by any alcohol use (pooled and by year)\",\n                               \"&lt;br&gt;&lt;sub&gt;BRFSS 2020–2024, n = \",\n                               comma(sum(!is.na(base_all$drink_any))), \"&lt;/sub&gt;\"),\n                 x = 0),\n    legend = list(orientation = \"h\", x = 0.5, xanchor = \"center\", y = -0.2),\n    margin = list(t = 80, b = 60)\n  )\n\n\n\n\n\n\nFigure 12 shows FMD prevalence by any alcohol use in the past 30 days, both pooled across years and separately by cycle. This figure is included because alcohol use is a relevant lifestyle factor, but its association with mental distress is more difficult to interpret than simpler behavioral measures.\nAcross the pooled sample, adults reporting any alcohol use had slightly lower FMD prevalence (12.5%) than those reporting none (14.3%), and this pattern was consistent across all five BRFSS cycles. Still, this should not be read as evidence that drinking is protective. The \"no alcohol\" category likely includes people who abstain because of illness, medication, prior alcohol dependence, or other health-related reasons, while the variable itself does not distinguish moderate from heavy drinking. The figure should therefore be interpreted as a descriptive comparison of broad groups rather than as evidence of a beneficial effect of alcohol use."
   },
   {
+    "objectID": "presentation.html#motivation",
+    "href": "presentation.html#motivation",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Motivation",
+    "text": "Motivation\n\nMental health is now a central pillar of U.S. public-health surveillance\nFrequent Mental Distress (FMD) = 14+ days of poor mental health in past 30 days\n\nCaptures meaningful psychological burden without a clinical diagnosis\nWidely used CDC state-level surveillance indicator\n\n2020–2024 spans the pandemic and post-pandemic period — a uniquely informative window\nGoal: produce a clear, layered descriptive picture of where mental distress is concentrated in U.S. adults\n\n\n\nNo causal modeling — this report is descriptive."
+  },
+  {
+    "objectID": "presentation.html#research-questions",
+    "href": "presentation.html#research-questions",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Research Questions",
+    "text": "Research Questions\n\nHow has overall FMD prevalence shifted through 2020–2024?\nHow does FMD vary across U.S. states, and is the pattern stable over time?\nHow is FMD patterned by behavioral / psychosocial / lifestyle factors?\n\nexercise, loneliness, emotional support, smoking, drinking, general health\n\nWhich demographic and socioeconomic groups report the highest FMD?\n\nage, sex, income, education, employment, marital status"
+  },
+  {
+    "objectID": "presentation.html#data-and-methods",
+    "href": "presentation.html#data-and-methods",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Data and Methods",
+    "text": "Data and Methods\n\nSource: CDC BRFSS annual survey files, 2020–2024 (LLCP2020.XPT–LLCP2024.XPT)\nPrimary outcome: FMD, defined as _MENT14D == 3\nAnalytic sample\n\n2,097,130 respondents with valid FMD (pooled 2020–2024)\n442,292 respondents for 2024 state-level snapshot\n\nCoverage: 50 states + DC (territories removed; Tennessee absent in 2024)\nHarmonization: income, doctor-cost, and alcohol variables aligned across cycles\nAnalysis style: descriptive, unweighted, pairwise complete-case figures"
+  },
+  {
+    "objectID": "presentation.html#figure-1-overall-fmd-prevalence-2024",
+    "href": "presentation.html#figure-1-overall-fmd-prevalence-2024",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 1 — Overall FMD prevalence, 2024",
+    "text": "Figure 1 — Overall FMD prevalence, 2024\n\n\n\n13.9% of U.S. adults met the FMD criterion in 2024 (n = 442,292)\nFMD affects a substantial share of adults — not a small exceptional group\nSets the national baseline for every comparison that follows"
+  },
+  {
+    "objectID": "presentation.html#figure-2-fmd-trend-20202024",
+    "href": "presentation.html#figure-2-fmd-trend-20202024",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 2 — FMD trend, 2020–2024",
+    "text": "Figure 2 — FMD trend, 2020–2024\n\n\nModest but consistent upward drift: 12.3% → 13.9%\nMost of the rise occurred between 2020 and 2022\n2023 dipped slightly, but 2024 is the highest of the five years\nEven a 1-pp shift ≈ 2.6 million more U.S. adults reporting FMD"
+  },
+  {
+    "objectID": "presentation.html#figure-3-distribution-of-poor-mental-health-days-2024",
+    "href": "presentation.html#figure-3-distribution-of-poor-mental-health-days-2024",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 3 — Distribution of poor-mental-health days (2024)",
+    "text": "Figure 3 — Distribution of poor-mental-health days (2024)\n\n\nDistribution is strongly right-skewed and bimodal\nMost respondents report 0 days; a nontrivial mass reports 30 days\nThe middle range (5–25 days) is sparse\nSupports dichotomizing at 14 days — persistent vs. occasional distress"
+  },
+  {
+    "objectID": "presentation.html#figure-4a-state-ranking-brfss-2024",
+    "href": "presentation.html#figure-4a-state-ranking-brfss-2024",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 4a — State ranking, BRFSS 2024",
+    "text": "Figure 4a — State ranking, BRFSS 2024\n\n\n\n\n\n\n\n\n\nHighest: Oregon, Kentucky, Louisiana, Arkansas (≥17%)\nLowest: North Dakota, South Dakota, New Hampshire, DC (≤11%)\nSpread across states: ~7.7 percentage points\nNational average hides large interstate differences"
+  },
+  {
+    "objectID": "presentation.html#figure-4b-choropleth-map-brfss-2024",
+    "href": "presentation.html#figure-4b-choropleth-map-brfss-2024",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 4b — Choropleth map, BRFSS 2024",
+    "text": "Figure 4b — Choropleth map, BRFSS 2024\n\n\nHigh prevalence concentrated in the South & Appalachia\nLow prevalence in the Upper Midwest & Great Plains\nTennessee is blank — did not meet 2024 BRFSS reporting minimums\nPattern is geographically structured, not random"
+  },
+  {
+    "objectID": "presentation.html#figure-4c-state-year-heatmap-20202024",
+    "href": "presentation.html#figure-4c-state-year-heatmap-20202024",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 4c — State × Year heatmap, 2020–2024",
+    "text": "Figure 4c — State × Year heatmap, 2020–2024\n\n\nState ordering is persistent across cycles\nHigh-prevalence states tend to stay high; low-prevalence states stay low\nA broader national upward drift shows up within most states\nBlank cells = unavailable estimates (e.g., TN 2024, KY & PA 2023)"
+  },
+  {
+    "objectID": "presentation.html#figure-5-trends-by-sex-and-age",
+    "href": "presentation.html#figure-5-trends-by-sex-and-age",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 5 — Trends by sex and age",
+    "text": "Figure 5 — Trends by sex and age\n\n\nWomen remain higher than men in every cycle; both trending up\nAge divergence is even sharper:\n\n18–29 adults drive the steepest increase\n70+ adults stay flat and lowest\n\nThe national rise is largely a young-adult phenomenon"
+  },
+  {
+    "objectID": "presentation.html#figure-6-loneliness-and-emotional-support",
+    "href": "presentation.html#figure-6-loneliness-and-emotional-support",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 6 — Loneliness and emotional support",
+    "text": "Figure 6 — Loneliness and emotional support\n\n\nLoneliness gradient is striking: 56.7% (Always lonely) → 5.4% (Never)\nSupport gradient mirrors it: rarely supported → 44.0% FMD\nAmong the strongest correlates in the entire report\nOptional module — fielded by a subset of jurisdictions (n ≈ 410k)"
+  },
+  {
+    "objectID": "presentation.html#figure-7-exercise-and-general-health",
+    "href": "presentation.html#figure-7-exercise-and-general-health",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 7 — Exercise and general health",
+    "text": "Figure 7 — Exercise and general health\n\n\nAny recent physical activity → 11.4% FMD (vs. 19.7% without)\nSelf-rated general health shows a monotone 5.6% → 44.5% gradient\nFMD is embedded in a broader pattern of self-reported ill-being"
+  },
+  {
+    "objectID": "presentation.html#figure-8-age-income-education",
+    "href": "presentation.html#figure-8-age-income-education",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 8 — Age, income, education",
+    "text": "Figure 8 — Age, income, education\n\n\nAge: 22.6% (18–24) → 6.2% (80+) — strongly monotone\nIncome: 29.1% (lowest bin) → ≈10% (highest) — steep gradient\nEducation: lowest among college graduates\nFMD concentrated among younger, lower-income, less-educated adults"
+  },
+  {
+    "objectID": "presentation.html#figure-9-employment-status",
+    "href": "presentation.html#figure-9-employment-status",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 9 — Employment status",
+    "text": "Figure 9 — Employment status\n\n\nUnable to work: 37.7% — highest by a wide margin\nOut of work (any duration): 25–27%\nRetired / self-employed / employed: 8–13%\nLikely bidirectional — distress limits work, joblessness strains mental health"
+  },
+  {
+    "objectID": "presentation.html#figure-10-marital-status",
+    "href": "presentation.html#figure-10-marital-status",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 10 — Marital status",
+    "text": "Figure 10 — Marital status\n\n\nSeparated (25.3%) and never-married / divorced (~18–20%) highest\nMarried (9.3%) lowest\nPartnership status adds another layer beyond income & employment\nEntangled with age, finances, and transitions — not causal"
+  },
+  {
+    "objectID": "presentation.html#figure-11-smoking-status",
+    "href": "presentation.html#figure-11-smoking-status",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 11 — Smoking status",
+    "text": "Figure 11 — Smoking status\n\n\nClear dose–response gradient: Never → Former → Occasional → Daily\nDaily smokers: 25.7% vs. Never smokers: 11.0%\nReflects co-occurrence, self-medication, and shared upstream risks\nNot causal — cross-sectional association"
+  },
+  {
+    "objectID": "presentation.html#figure-12-alcohol-use",
+    "href": "presentation.html#figure-12-alcohol-use",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Figure 12 — Alcohol use",
+    "text": "Figure 12 — Alcohol use\n\n\nPooled: Yes 12.5% vs. No 14.3% — counter-intuitive but consistent across years\nNot evidence that drinking is protective\n“Sick-quitter” effect: abstainers over-represent people with chronic illness / prior dependence\nDRNKANY6 doesn’t separate moderate from heavy use"
+  },
+  {
+    "objectID": "presentation.html#key-findings",
+    "href": "presentation.html#key-findings",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Key Findings",
+    "text": "Key Findings\n\nUpward drift, 2020–2024 — small but consistent; driven by younger adults\nState variation is large and stable — highest ≈ 2× lowest; geography is structured\nPsychosocial factors dominate — loneliness and emotional support are the strongest correlates\nSocioeconomic inequities persist — low income, unemployment, separation, low education, and inability to afford care all elevate FMD"
+  },
+  {
+    "objectID": "presentation.html#limitations",
+    "href": "presentation.html#limitations",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Limitations",
+    "text": "Limitations\n\nUnweighted — does not account for BRFSS complex survey design\nCross-sectional & self-reported — descriptive, not causal\nOptional module (loneliness, support) fielded by only a subset of jurisdictions\nSome variables (e.g., sleep) not consistently available across cycles\nTennessee missing in 2024"
+  },
+  {
+    "objectID": "presentation.html#thank-you",
+    "href": "presentation.html#thank-you",
+    "title": "State-level Variation and Multi-year Trends in Frequent Mental Distress Among U.S. Adults",
+    "section": "Thank You",
+    "text": "Thank You\nQuestions?\nBoqian Mao · Shuchen Wu BIOSTAT 620 Final Project, April 2026\nFull interactive report: alfie0925.github.io/biostat620-final-project"
+  },
+  {
     "objectID": "data-processing.html",
     "href": "data-processing.html",
     "title": "Data Processing",
